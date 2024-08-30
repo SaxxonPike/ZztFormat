@@ -9,30 +9,6 @@ public delegate RawZztTile TileCompressFunc(int x, int y);
 
 public static class TileCompression
 {
-    public static int Compress(
-        ReadOnlySpan<byte> target,
-        int width,
-        int height,
-        TileCompressFunc func)
-    {
-        var x = 2;
-        var y = 1;
-        var capacity = width * height;
-        var progress = 1;
-        var result = 0;
-        var lastTile = func(1, 1);
-        var count = 1;
-
-        while (progress < capacity)
-        {
-            var tile = func(x, y);
-            if (lastTile.Value != tile.Value)
-            {
-                
-            }
-        }
-    }
-    
     public static int Decompress(
         ReadOnlySpan<byte> source,
         int width,

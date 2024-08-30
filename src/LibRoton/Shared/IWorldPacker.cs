@@ -7,8 +7,3 @@ public interface IWorldPacker
     Memory<byte> Pack(World world);
     int Pack(World world, Stream stream);
 }
-
-public interface IElementConverter
-{
-    Element 
-}
