@@ -1,9 +1,10 @@
-﻿using System.Buffers.Binary;
+﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using LibRoton.Zzt.Structures.LowLevel;
+using Expression = System.Linq.Expressions.Expression;
 
 namespace LibRoton.Serialization;
 
@@ -13,252 +14,425 @@ public delegate void BinaryWriteFunc<T>(BinaryWriter writer, T value);
 
 public class BinaryIoFactory
 {
-    private record struct FieldLayout(
-        FieldInfo Field,
-        Type ItemType,
-        int? Offset,
-        bool Primitive,
-        bool InlineArray,
-        int FieldPack = 0,
-        int ItemSize = 0,
-        int ItemCount = 1,
-        int ItemPack = 0
-    );
+    private static readonly Type _tReadOnlyByteSpan =
+        typeof(ReadOnlySpan<byte>);
 
-    private static Span<T> InlineArrayToSpan<T>(ref T item0) =>
-        MemoryMarshal.CreateSpan(ref item0, typeof(T).GetCustomAttribute<InlineArrayAttribute>()!.Length);
+    private static readonly Type _tByteSpan =
+        typeof(ReadOnlySpan<byte>);
 
-    private static FieldLayout? CreateFieldLayout(FieldInfo field)
+    private static readonly Dictionary<Type, MethodInfo> _readMethods = new()
     {
-        if (field.FieldType.GetCustomAttribute<NonSerializedAttribute>() is not null)
-            return null;
-
-        var offset = field.GetCustomAttribute<FieldOffsetAttribute>()?.Value;
-
-        if (field.FieldType.GetCustomAttribute<InlineArrayAttribute>() is { } inlineArray)
         {
-            var fieldType = field.FieldType
-                .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
-                .First()
-                .FieldType;
+            typeof(byte),
+            typeof(BinaryIoFactory).GetMethod(
+                nameof(ReadByte), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(sbyte),
+            typeof(BinaryIoFactory).GetMethod(
+                nameof(ReadSByte), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(short),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadInt16LittleEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(ushort),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadUInt16LittleEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(int),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadInt32LittleEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(uint),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadUInt32LittleEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(long),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadInt64LittleEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(ulong),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadUInt64LittleEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(float),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadSingleLittleEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        },
+        {
+            typeof(double),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.ReadDoubleBigEndian), StaticFlags, [_tReadOnlyByteSpan])!
+        }
+    };
 
-            var itemPack = fieldType.StructLayoutAttribute?.Pack;
+    private static readonly Dictionary<Type, MethodInfo> _writeMethods = new()
+    {
+        {
+            typeof(byte),
+            typeof(BinaryIoFactory).GetMethod(
+                nameof(WriteByte), StaticFlags, [_tByteSpan, typeof(byte)])!
+        },
+        {
+            typeof(sbyte),
+            typeof(BinaryIoFactory).GetMethod(
+                nameof(WriteSByte), StaticFlags, [_tByteSpan, typeof(sbyte)])!
+        },
+        {
+            typeof(short),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteInt16LittleEndian), StaticFlags, [_tByteSpan, typeof(short)])!
+        },
+        {
+            typeof(ushort),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteUInt16LittleEndian), StaticFlags, [_tByteSpan, typeof(ushort)])!
+        },
+        {
+            typeof(int),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteInt32LittleEndian), StaticFlags, [_tByteSpan, typeof(int)])!
+        },
+        {
+            typeof(uint),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteUInt32LittleEndian), StaticFlags, [_tByteSpan, typeof(uint)])!
+        },
+        {
+            typeof(long),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteInt64LittleEndian), StaticFlags, [_tByteSpan, typeof(long)])!
+        },
+        {
+            typeof(ulong),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteUInt64LittleEndian), StaticFlags, [_tByteSpan, typeof(ulong)])!
+        },
+        {
+            typeof(float),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteSingleLittleEndian), StaticFlags, [_tByteSpan, typeof(float)])!
+        },
+        {
+            typeof(double),
+            typeof(BinaryPrimitives).GetMethod(
+                nameof(BinaryPrimitives.WriteDoubleLittleEndian), StaticFlags, [_tByteSpan, typeof(double)])!
+        }
+    };
 
-            return new FieldLayout(
-                Field: field,
-                ItemType: fieldType,
-                Offset: offset,
-                Primitive: false,
-                InlineArray: true,
-                ItemCount: inlineArray.Length,
-                ItemPack: itemPack ?? 0
-            );
+    private const BindingFlags InstanceFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance;
+    private const BindingFlags StaticFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static;
+
+    private static byte ReadByte(ReadOnlySpan<byte> span) =>
+        span[0];
+
+    private static sbyte ReadSByte(ReadOnlySpan<byte> span) =>
+        unchecked((sbyte)span[0]);
+
+    private static void WriteByte(Span<byte> span, byte value) =>
+        span[0] = value;
+
+    private static void WriteSByte(Span<sbyte> span, byte value) =>
+        span[0] = unchecked((sbyte)value);
+
+    private static int CalculateSize(Type t)
+    {
+        if (t.IsPrimitive || t.IsEnum)
+            return Marshal.SizeOf(t);
+
+        if (t.GetCustomAttribute<InlineArrayAttribute>() is { } inlineArray)
+        {
+            var elementType = t.GetFields(InstanceFlags).First().FieldType;
+            return CalculateSize(elementType) * inlineArray.Length;
         }
 
-        if (field.FieldType.IsPrimitive)
+        var structLayout = t.StructLayoutAttribute;
+        if (structLayout?.Size is { } size and > 0)
+            return size;
+
+        var offset = 0;
+        var maxOffset = 0;
+        foreach (var field in t.GetFields(InstanceFlags))
         {
-            var fieldType = field.FieldType;
-
-            return new FieldLayout(
-                Field: field,
-                ItemType: fieldType,
-                Offset: offset,
-                Primitive: true,
-                InlineArray: false,
-                ItemSize: Marshal.SizeOf(fieldType)
-            );
-        }
-
-        if (field.FieldType.IsEnum)
-        {
-            var fieldType = field.FieldType.GetEnumUnderlyingType();
-
-            return new FieldLayout(
-                Field: field,
-                ItemType: fieldType,
-                Offset: offset,
-                Primitive: true,
-                InlineArray: false,
-                ItemSize: Marshal.SizeOf(fieldType)
-            );
-        }
-
-        if (field.FieldType.IsValueType)
-        {
-            var fieldType = field.FieldType;
-
-            return new FieldLayout(
-                Field: field,
-                ItemType: fieldType,
-                Offset: offset,
-                Primitive: false,
-                InlineArray: false
-            );
-        }
-
-        throw new Exception($"Unsupported field type {field.FieldType}");
-    }
-
-    private static IEnumerable<FieldLayout> GetFieldLayouts(Type type)
-    {
-        var fields = type
-            .GetFields(
-                BindingFlags.Public |
-                BindingFlags.NonPublic |
-                BindingFlags.Instance
-            );
-
-        var layouts = fields
-            .Select(CreateFieldLayout)
-            .Where(l => l != null)
-            .Select(l => (FieldLayout)l!);
-
-        return layouts;
-    }
-
-    private static byte ReadByte(BinaryReader reader) =>
-        reader.ReadByte();
-
-    private static sbyte ReadSByte(BinaryReader reader) =>
-        reader.ReadSByte();
-
-    private static ushort ReadUInt16(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(ushort)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadUInt16LittleEndian(buf);
-    }
-
-    private static short ReadInt16(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(short)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadInt16LittleEndian(buf);
-    }
-
-    private static uint ReadUInt32(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(uint)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadUInt32LittleEndian(buf);
-    }
-
-    private static int ReadInt32(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(int)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadInt32LittleEndian(buf);
-    }
-
-    private static ulong ReadUInt64(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(ulong)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadUInt64LittleEndian(buf);
-    }
-
-    private static long ReadInt64(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(long)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadInt64LittleEndian(buf);
-    }
-
-    private static float ReadSingle(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(float)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadSingleLittleEndian(buf);
-    }
-
-    private static double ReadDouble(BinaryReader reader)
-    {
-        Span<byte> buf = stackalloc byte[sizeof(double)];
-        reader.Read(buf);
-        return BinaryPrimitives.ReadDoubleLittleEndian(buf);
-    }
-
-    private static void ReadBytes(BinaryReader reader, Span<byte> buf)
-    {
-        reader.Read(buf);
-    }
-
-    private static bool ReadBoolean(BinaryReader reader) =>
-        reader.ReadBoolean();
-
-    private static IEnumerable<Expression> GetReadExpressions(
-        ParameterExpression reader,
-        Expression target)
-    {
-        if (reader.Type != typeof(BinaryReader))
-            throw new Exception("Type of reader expression must be BinaryReader.");
-
-        foreach (var layout in GetFieldLayouts(target.Type))
-        {
-            if (layout.InlineArray)
-            {
+            if (field.GetCustomAttribute<NonSerializedAttribute>() is not null)
                 continue;
-            }
-            else if (!layout.Primitive)
-            {
-                foreach (var expr in GetReadExpressions(reader, Expression.Field(target, layout.Field)))
-                    yield return expr;
-                continue;
-            }
 
-            var targetField = Expression.Field(target, layout.Field);
-            string? methodName = default;
+            if (field.GetCustomAttribute<FieldOffsetAttribute>() is { } fieldOffset)
+                offset = fieldOffset.Value;
 
-            if (layout.ItemType == typeof(byte))
-                methodName = nameof(ReadByte);
-            if (layout.ItemType == typeof(sbyte))
-                methodName = nameof(ReadSByte);
-            if (layout.ItemType == typeof(ushort))
-                methodName = nameof(ReadUInt16);
-            if (layout.ItemType == typeof(short))
-                methodName = nameof(ReadInt16);
-            if (layout.ItemType == typeof(uint))
-                methodName = nameof(ReadUInt32);
-            if (layout.ItemType == typeof(int))
-                methodName = nameof(ReadInt32);
-            if (layout.ItemType == typeof(ulong))
-                methodName = nameof(ReadUInt64);
-            if (layout.ItemType == typeof(long))
-                methodName = nameof(ReadInt64);
-            if (layout.ItemType == typeof(float))
-                methodName = nameof(ReadSingle);
-            if (layout.ItemType == typeof(double))
-                methodName = nameof(ReadDouble);
-            if (layout.ItemType == typeof(bool))
-                methodName = nameof(ReadBoolean);
-
-            if (methodName == default)
-                throw new Exception($"Unsupported primitive type {layout.ItemType.Name}");
-
-            var methodInfo = typeof(BinaryIoFactory).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
-            yield return Expression.Assign(targetField, Expression.Call(methodInfo!, reader));
+            offset += CalculateSize(field.FieldType);
+            if (offset > maxOffset)
+                maxOffset = offset;
         }
 
-        yield break;
+        return maxOffset;
     }
 
-    public Func<BinaryReader, T> CreateReader<T>()
+    private static Expression GetReadExpression(
+        ParameterExpression stream,
+        Type fieldType)
+    {
+        var buffer = Expression.Variable(typeof(System.Buffers.IMemoryOwner<byte>), "buffer");
+        var offset = Expression.Variable(typeof(int), "offset");
+        var target = Expression.Variable(fieldType, "target");
+        var span = Expression.Variable(typeof(Span<byte>), "span");
+        var size = CalculateSize(fieldType);
+        var body = new List<Expression>();
+
+        body.AddRange([
+            Expression.Assign(
+                buffer,
+                Expression.Call(
+                    Expression.Constant(MemoryPool<byte>.Shared),
+                    nameof(MemoryPool<byte>.Rent),
+                    Type.EmptyTypes,
+                    [Expression.Constant(size)]
+                )
+            ),
+            Expression.Assign(
+                span,
+                Expression.Call(
+                    Expression.Property(
+                        Expression.Property(
+                            buffer,
+                            nameof(IMemoryOwner<byte>.Memory)
+                        ),
+                        nameof(Memory<byte>.Span)
+                    ),
+                    nameof(Span<byte>.Slice),
+                    Type.EmptyTypes,
+                    Expression.Constant(size)
+                )
+            ),
+            Expression.Assign(
+                offset,
+                Expression.Constant(0)
+            ),
+            Expression.Call(
+                stream,
+                nameof(Stream.Read),
+                Type.EmptyTypes,
+                span
+            )
+        ]);
+
+        body.Add(
+            Expression.Assign(
+                target,
+                Expression.New(fieldType)
+            )
+        );
+
+        body.AddRange(
+            GetParseExpressions(
+                0,
+                fieldType,
+                span,
+                offset,
+                target,
+                fieldType.StructLayoutAttribute?.Value ?? LayoutKind.Sequential
+            )
+        );
+
+        body.Add(target);
+
+        return Expression.Block(
+            [span, buffer, offset, target],
+            Expression.TryFinally(
+                Expression.Block(body),
+                Expression.IfThen(
+                    Expression.NotEqual(
+                        buffer,
+                        Expression.Default(typeof(System.Buffers.IMemoryOwner<byte>))
+                    ),
+                    Expression.Call(
+                        Expression.Constant(MemoryPool<byte>.Shared),
+                        nameof(MemoryPool<byte>.Dispose),
+                        Type.EmptyTypes
+                    )
+                )
+            )
+        );
+    }
+
+    private static IEnumerable<Expression> GetParseExpressions(
+        int depth,
+        Type fieldType,
+        ParameterExpression span,
+        ParameterExpression offset,
+        Expression target,
+        LayoutKind layoutKind)
+    {
+        if (fieldType.GetCustomAttribute<InlineArrayAttribute>() is { } inlineArray)
+        {
+            var zeroField = fieldType.GetFields(InstanceFlags).First();
+            var itemType = zeroField.FieldType;
+            if (itemType == typeof(byte))
+            {
+                var createSpanMethod = typeof(MemoryMarshal)
+                    .GetMethod(nameof(MemoryMarshal.CreateSpan), StaticFlags, [itemType, typeof(int)])!;
+
+                var arrayLength = Expression.Constant(inlineArray.Length);
+
+                var arraySpan = Expression.Call(
+                    createSpanMethod,
+                    [Expression.Field(target, zeroField), arrayLength]
+                );
+
+                var arraySpanVar = Expression.Variable(typeof(Span<>).MakeGenericType(itemType));
+
+                var loopBreak = Expression.Label();
+                var loopCount = Expression.Constant(inlineArray.Length);
+                var loopCounter = Expression.Variable(typeof(int));
+                var itemVal = Expression.Variable(itemType);
+                var itemParseExpressions = GetParseExpressions(
+                    depth + 1,
+                    itemType,
+                    arraySpanVar,
+                    offset,
+                    itemVal,
+                    itemType.StructLayoutAttribute?.Value ?? LayoutKind.Sequential
+                );
+
+                Expression.Block(
+                    [loopCounter, arraySpanVar, itemVal],
+                    Expression.Assign(
+                        loopCounter,
+                        Expression.Constant(0)
+                    ),
+                    Expression.Assign(
+                        arraySpanVar,
+                        arraySpan
+                    ),
+                    Expression.Loop(
+                        Expression.IfThenElse(
+                            Expression.GreaterThanOrEqual(
+                                loopCounter,
+                                loopCount
+                            ),
+                            Expression.Break(loopBreak),
+                            Expression.Block(itemParseExpressions
+                                .Concat([
+                                    Expression.Assign()
+                                ]))
+                        )
+                    ));
+            }
+
+            yield break;
+        }
+
+        var dataType = fieldType.IsEnum
+            ? fieldType.GetEnumUnderlyingType()
+            : fieldType;
+
+        Func<Expression, Expression> fieldConvert = fieldType.IsEnum
+            ? e => Expression.Convert(e, fieldType)
+            : e => e;
+
+        if (_readMethods.TryGetValue(dataType, out var readMethod))
+        {
+            yield return Expression.Assign(
+                target,
+                fieldConvert(
+                    Expression.Call(
+                        readMethod,
+                        Expression.Convert(
+                            Expression.Call(
+                                span,
+                                nameof(Span<byte>.Slice),
+                                Type.EmptyTypes,
+                                offset
+                            ),
+                            typeof(ReadOnlySpan<byte>)
+                        )
+                    )
+                )
+            );
+
+            if (layoutKind != LayoutKind.Explicit)
+            {
+                yield return Expression.AddAssign(
+                    offset,
+                    Expression.Constant(CalculateSize(dataType))
+                );
+            }
+
+            yield break;
+        }
+
+        if (dataType.IsPrimitive)
+            throw new Exception($"Primitive type {dataType.Name} not supported.");
+
+        var structLayout = dataType.StructLayoutAttribute;
+        var body = new List<Expression>();
+        var subOffset = Expression.Variable(typeof(int), $"offset{depth}");
+        var subSpan = Expression.Variable(typeof(Span<byte>), $"span{depth}");
+
+        body.AddRange([
+            Expression.Assign(
+                subOffset,
+                Expression.Constant(0)
+            ),
+            Expression.Assign(
+                subSpan,
+                Expression.Call(
+                    span,
+                    nameof(Span<byte>.Slice),
+                    Type.EmptyTypes,
+                    offset
+                )
+            )
+        ]);
+
+        foreach (var field in fieldType.GetFields(InstanceFlags))
+        {
+            if (field.GetCustomAttribute<FieldOffsetAttribute>() is { } fieldOffset)
+            {
+                body.Add(
+                    Expression.Assign(
+                        subOffset,
+                        Expression.Constant(fieldOffset.Value)
+                    )
+                );
+            }
+
+            body.AddRange(
+                GetParseExpressions(
+                    depth + 1,
+                    field.FieldType,
+                    subSpan,
+                    subOffset,
+                    Expression.Field(target, field),
+                    structLayout?.Value ?? LayoutKind.Sequential
+                )
+            );
+        }
+
+        yield return Expression.Block(
+            [subOffset, subSpan],
+            body
+        );
+    }
+
+    public Expression<Func<Stream, T>> CreateReaderExpression<T>()
     {
         var type = typeof(T);
-        var reader = Expression.Parameter(typeof(BinaryReader), "reader");
-        var value = Expression.Variable(typeof(T));
-        List<Expression> reads = [];
+        var stream = Expression.Parameter(typeof(Stream), "stream");
+        return Expression.Lambda<Func<Stream, T>>(GetReadExpression(stream, type), stream);
+    }
 
-        // Create the local variable.
-        reads.Add(Expression.Assign(value, Expression.New(typeof(T))));
-
-        // Perform the read operations.
-        reads.AddRange(GetReadExpressions(reader, value));
-
-        // Return the local variable.
-        reads.Add(value);
-
-        var lambda = Expression.Lambda<Func<BinaryReader, T>>(Expression.Block([value], reads), reader);
+    public Func<Stream, T> CreateReader<T>()
+    {
+        var lambda = CreateReaderExpression<T>();
         return lambda.Compile();
     }
 }
