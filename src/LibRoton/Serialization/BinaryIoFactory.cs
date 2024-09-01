@@ -277,17 +277,21 @@ public class BinaryIoFactory
             var itemType = zeroField.FieldType;
             if (itemType == typeof(byte))
             {
+                // Creates a span out of the array.
                 var createSpanMethod = typeof(MemoryMarshal)
                     .GetMethod(nameof(MemoryMarshal.CreateSpan), StaticFlags, [itemType, typeof(int)])!;
 
+                // Holds the length of the array.
                 var arrayLength = Expression.Constant(inlineArray.Length);
 
+                // Holds the current span - position 0 is the current element.
                 var arraySpan = Expression.Call(
                     createSpanMethod,
                     [Expression.Field(target, zeroField), arrayLength]
                 );
 
-                var arraySpanVar = Expression.Variable(typeof(Span<>).MakeGenericType(itemType));
+                var arraySpanVar = Expression.Variable(typeof(Span<>)
+                    .MakeGenericType(itemType));
 
                 var loopBreak = Expression.Label();
                 var loopCount = Expression.Constant(inlineArray.Length);
