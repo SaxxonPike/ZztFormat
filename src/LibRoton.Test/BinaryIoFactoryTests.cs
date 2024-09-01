@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using LibRoton.Serialization;
-using LibRoton.Zzt.Structures.LowLevel;
 
 namespace LibRoton.Test;
 

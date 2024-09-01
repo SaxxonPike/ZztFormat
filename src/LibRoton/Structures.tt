@@ -1,0 +1,161 @@
+﻿<#@ template language="C#" hostspecific="true" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+// Automatically generated from Structures.txt
+
+using JetBrains.Annotations;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+// ReSharper disable once CheckNamespace
+namespace LibRoton.Structures;
+<#
+    string GetReaderFunc(string type, int offset, string target) =>
+        type.ToLowerInvariant() switch 
+        {
+            "bool" or "boolean" => $"{target} = span[{offset}] != 0;",
+            "byte" or "uint8" => $"{target} = span[{offset}];",
+            "sbyte" or "int8" => $"{target} = unchecked((sbyte)span[{offset}]);",
+            "short" or "int16" => $"{target} = BinaryPrimitives.ReadInt16LittleEndian(span[{offset}..]);",
+            "ushort" or "uint16" => $"{target} = BinaryPrimitives.ReadUInt16LittleEndian(span[{offset}..]);",
+            "int" or "int32" => $"{target} = BinaryPrimitives.ReadInt32LittleEndian(span[{offset}..]);",
+            "uint" or "uint32" => $"{target} = BinaryPrimitives.ReadUInt32LittleEndian(span[{offset}..]);",
+            "long" or "int64" => $"{target} = BinaryPrimitives.ReadInt64LittleEndian(span[{offset}..]);",
+            "ulong" or "uint64" => $"{target} = BinaryPrimitives.ReadUInt64LittleEndian(span[{offset}..]);",
+            "float" or "single" => $"{target} = BinaryPrimitives.ReadSingleLittleEndian(span[{offset}..]);",
+            "double" => $"{target} = BinaryPrimitives.ReadDoubleLittleEndian(span[{offset}..]);",
+            _ => $"{target} = MemoryMarshal.Cast<byte, {type}>(span[{offset}..]);"
+            };
+
+    string GetWriterFunc(string type, int offset, string source) =>
+        type.ToLowerInvariant() switch 
+        {
+            "bool" or "boolean" => $"span[{offset}] = {source} ? (byte)1 : 0;",
+            "byte" or "uint8" => $"span[{offset}] = {source};",
+            "sbyte" or "int8" => $"span[{offset}] = unchecked((byte){source});",
+            "short" or "int16" => $"BinaryPrimitives.WriteInt16LittleEndian(span[{offset}..], {source});",
+            "ushort" or "uint16" => $"BinaryPrimitives.WriteUInt16LittleEndian(span[{offset}..], {source});",
+            "int" or "int32" => $"BinaryPrimitives.WriteInt32LittleEndian(span[{offset}..], {source});",
+            "uint" or "uint32" => $"BinaryPrimitives.WriteUInt32LittleEndian(span[{offset}..], {source});",
+            "long" or "int64" => $"BinaryPrimitives.WriteInt64LittleEndian(span[{offset}..], {source});",
+            "ulong" or "uint64" => $"BinaryPrimitives.WriteUInt64LittleEndian(span[{offset}..], {source});",
+            "float" or "single" => $"BinaryPrimitives.WriteSingleLittleEndian(span[{offset}..], {source});",
+            "double" => $"BinaryPrimitives.WriteDoubleLittleEndian(span[{offset}..], {source});",
+            _ => $"{source}.CopyTo(MemoryMarshal.Cast<{type}, byte>(span[{offset}..]));"
+            };
+
+    var structureLines = File.ReadAllLines(Host.ResolvePath("Structures.txt"));
+    string currentStructure = default;
+    var structureIsArray = false;
+    var structureLength = 0;
+    var readerLines = new List<string>();
+    var writerLines = new List<string>();
+
+    var lineIndex = 0;
+    while (lineIndex < structureLines.Length)
+    {
+        // Grab the next line.
+        var line = structureLines[lineIndex].Split([' '], StringSplitOptions.RemoveEmptyEntries);
+        if (line.Length < 1)
+        {
+            lineIndex++;
+            continue;
+        }
+
+        if (currentStructure == null)
+        {
+#>
+
+// Line <#= lineIndex #>
+<#
+            // Read structure type.
+            if (!line[0].Equals("begin", StringComparison.OrdinalIgnoreCase))
+                throw new Exception($"Expected 'begin' at {lineIndex}");
+
+            if (line.Length < 2)
+                throw new Exception($"Expected 'struct' or array type at {lineIndex}");
+
+            if (line[1].Equals("struct", StringComparison.OrdinalIgnoreCase))
+            {
+                // Parse 'struct' block.
+                if (line.Length < 3)
+                    throw new Exception($"Expected struct name at {lineIndex}");
+
+                if (line.Length < 4)
+                    throw new Exception($"Expected struct size at {lineIndex}");
+
+                structureIsArray = false;
+                currentStructure = line[2];
+                structureLength = int.Parse(line[3]);
+#>
+[PublicAPI]
+[StructLayout(LayoutKind.Explicit, Size = <#= structureLength #>, Pack = 1)]
+public struct <#= line[2] #>
+{
+<#
+                lineIndex++;
+                continue;
+            }
+
+            // Parse array block.
+            if (line.Length < 3)
+                throw new Exception($"Expected array name at {lineIndex}");
+
+            if (line.Length < 4)
+                throw new Exception($"Expected array length at {lineIndex}");
+
+            structureIsArray = true;
+            currentStructure = line[2];
+            structureLength = int.Parse(line[3]);
+#>
+[PublicAPI]
+[InlineArray(Length)]
+public struct <#= line[2] #>
+{
+    public const int Length = <#= structureLength #>;
+
+    private <#= line[1] #> _element0;
+
+    public static int Size => Length * Marshal.SizeOf<<#= line[1] #>>();
+
+    public Span<<#= line[1] #>> AsSpan() =>
+        MemoryMarshal.CreateSpan(ref _element0, Length);
+
+    public void CopyTo(Span<<#= line[1] #>> span) =>
+        AsSpan().CopyTo(span);
+
+    public static <#= line[2] #> Read(ReadOnlySpan<byte> span) =>
+        MemoryMarshal.Cast<byte, <#= line[2] #>>(span)[0];
+
+    public static void Write(Span<byte> span, <#= line[2] #> value) =>
+        MemoryMarshal.Cast<byte, <#= line[2] #>>(span)[0] = value;
+<#                
+            lineIndex++;
+            continue;
+        }
+
+        if (line[0].Equals("end", StringComparison.OrdinalIgnoreCase))
+        {
+#>
+}
+<#
+            currentStructure = null;
+            lineIndex++;
+            continue;
+        }
+
+        if (structureIsArray)
+            throw new Exception($"Expected 'end' at {lineIndex}");
+
+        if (line.Length < 2)
+            throw new Exception($"Expected field type at {lineIndex}");
+
+        if (line.Length < 3)
+            throw new Exception($"Expected field name at {lineIndex}");
+#>
+    [FieldOffset(<#= int.Parse(line[0]) #>)] public <#= line[1] #> <#= line[2] #>;
+<#
+        lineIndex++;
+    }
+#>
