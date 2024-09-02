@@ -26,4 +26,11 @@
     <ProjectReference Include="..\LibRoton\LibRoton.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Files\**\*" />
+    <Content Include="Files\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

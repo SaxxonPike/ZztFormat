@@ -6,7 +6,7 @@
 11  short Follower
 13  short Leader
 15  ZztTile Under
-17  ZztPointer Pointer
+17  int Pointer
 21  short Instruction
 23  short Length
 25  ZztActorExtra Extra
@@ -42,19 +42,21 @@ begin struct ZztBoardInfo 88
 end
 
 begin struct ZztBoardMessage 59
+extend string Length Bytes
 0   byte Length
-1   ZztBoardMessageText Text
+1   ZztBoardMessageBytes Bytes
 end
 
-begin byte ZztBoardMessageText 58
+begin byte ZztBoardMessageBytes 58
 end
 
 begin struct ZztBoardName 51
+extend string Length Bytes
 0   byte Length
-1   ZztBoardNameText Text
+1   ZztBoardNameBytes Bytes
 end 
 
-begin byte ZztBoardNameText 50
+begin byte ZztBoardNameBytes 50
 end
 
 begin struct ZztElement 195
@@ -66,10 +68,10 @@ begin struct ZztElement 195
 5   byte IsEditorFloor
 6   byte IsFloor
 7   byte HasDrawFunc
-8   ZztPointer DrawFunc
+8   int DrawFunc
 12  short Cycle
-14  ZztPointer ActFunc
-18  ZztPointer InteractFunc
+14  int ActFunc
+18  int InteractFunc
 22  short Menu
 24  byte MenuKey
 25  ZztElementString Name
@@ -84,16 +86,12 @@ begin struct ZztElement 195
 end
 
 begin struct ZztElementString 21
+extend string Length Bytes
 0   byte Length
-1   ZztElementStringText Text
+1   ZztElementStringBytes Bytes
 end
 
-begin byte ZztElementStringText 20
-end
-
-begin struct ZztPointer 4
-0   ushort Segment
-2   ushort Offset
+begin byte ZztElementStringBytes 20
 end
 
 begin struct ZztPosition 2
@@ -141,7 +139,7 @@ begin struct ZztWorldHeader 512
 23  short EnergyCycles
 25  short Unused25
 27  short Score
-29  ZztWorldString WorldName
+29  ZztWorldString Name
 50  ZztWorldFlags Flags
 260 ZztTime TimePassed
 264 byte Locked
@@ -152,11 +150,12 @@ begin byte ZztWorldKeys 7
 end
 
 begin struct ZztWorldString 21
+extend string Length Bytes
 0   byte Length
-1   ZztWorldStringText Text
+1   ZztWorldStringBytes Bytes
 end
 
-begin byte ZztWorldStringText 20
+begin byte ZztWorldStringBytes 20
 end
 
 begin struct SuperZztActor 25
@@ -167,7 +166,7 @@ begin struct SuperZztActor 25
 11  short Follower
 13  short Leader
 15  ZztTile Under
-17  ZztPointer Pointer
+17  int Pointer
 21  short Instruction
 23  short Length
 end
@@ -192,11 +191,12 @@ begin struct SuperZztBoardInfo 30
 end
 
 begin struct SuperZztBoardName 61
+extend string Length Bytes
 0   byte Length
-1   SuperZztBoardNameText Text
+1   SuperZztBoardNameBytes Bytes
 end
 
-begin byte SuperZztBoardNameText 60
+begin byte SuperZztBoardNameBytes 60
 end
 
 begin struct SuperZztElement 194
@@ -207,10 +207,10 @@ begin struct SuperZztElement 194
 4   byte IsEditorFloor
 5   byte IsFloor
 6   byte HasDrawFunc
-7   ZztPointer DrawFunc
+7   int DrawFunc
 11  short Cycle
-13  ZztPointer ActFunc
-17  ZztPointer InteractFunc
+13  int ActFunc
+17  int InteractFunc
 21  short Menu
 23  byte MenuKey
 24  ZztElementString Name
@@ -242,7 +242,7 @@ begin struct SuperZztWorldHeader 1024
 21  short Score
 23  short Unused23
 25  short EnergyCycles
-27  ZztWorldString WorldName
+27  ZztWorldString Name
 48  SuperZztWorldFlags Flags
 384 ZztTime TimePassed
 388 byte Locked

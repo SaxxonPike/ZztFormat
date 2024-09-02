@@ -5,52 +5,70 @@
 // Automatically generated from Structures.txt
 
 using JetBrains.Annotations;
+using System.Buffers.Binary;
+using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 // ReSharper disable once CheckNamespace
+// ReSharper disable UseObjectOrCollectionInitializer
 namespace LibRoton.Structures;
+
+internal static class CodePage437
+{
+    private static readonly Lazy<Encoding> _encoding = new(() =>
+    {
+        CodePagesEncodingProvider.Instance.GetEncoding(437);
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        return Encoding.GetEncoding(437);
+    });
+
+    public static Encoding Encoding => _encoding.Value;
+}
 <#
-    string GetReaderFunc(string type, int offset, string target) =>
-        type.ToLowerInvariant() switch 
+    const StringComparison ignoreCase = StringComparison.OrdinalIgnoreCase;
+
+    string GetReaderFunc(string type, string offset, string target, string source) =>
+        "        " + type.ToLowerInvariant() switch 
         {
-            "bool" or "boolean" => $"{target} = span[{offset}] != 0;",
-            "byte" or "uint8" => $"{target} = span[{offset}];",
-            "sbyte" or "int8" => $"{target} = unchecked((sbyte)span[{offset}]);",
-            "short" or "int16" => $"{target} = BinaryPrimitives.ReadInt16LittleEndian(span[{offset}..]);",
-            "ushort" or "uint16" => $"{target} = BinaryPrimitives.ReadUInt16LittleEndian(span[{offset}..]);",
-            "int" or "int32" => $"{target} = BinaryPrimitives.ReadInt32LittleEndian(span[{offset}..]);",
-            "uint" or "uint32" => $"{target} = BinaryPrimitives.ReadUInt32LittleEndian(span[{offset}..]);",
-            "long" or "int64" => $"{target} = BinaryPrimitives.ReadInt64LittleEndian(span[{offset}..]);",
-            "ulong" or "uint64" => $"{target} = BinaryPrimitives.ReadUInt64LittleEndian(span[{offset}..]);",
-            "float" or "single" => $"{target} = BinaryPrimitives.ReadSingleLittleEndian(span[{offset}..]);",
-            "double" => $"{target} = BinaryPrimitives.ReadDoubleLittleEndian(span[{offset}..]);",
-            _ => $"{target} = MemoryMarshal.Cast<byte, {type}>(span[{offset}..]);"
+            "bool" or "boolean" => $"{target} = {source}[{offset}] != 0;",
+            "byte" or "uint8" => $"{target} = {source}[{offset}];",
+            "sbyte" or "int8" => $"{target} = unchecked((sbyte){source}[{offset}]);",
+            "short" or "int16" => $"{target} = BinaryPrimitives.ReadInt16LittleEndian({source}[{offset}..]);",
+            "ushort" or "uint16" => $"{target} = BinaryPrimitives.ReadUInt16LittleEndian({source}[{offset}..]);",
+            "int" or "int32" => $"{target} = BinaryPrimitives.ReadInt32LittleEndian({source}[{offset}..]);",
+            "uint" or "uint32" => $"{target} = BinaryPrimitives.ReadUInt32LittleEndian({source}[{offset}..]);",
+            "long" or "int64" => $"{target} = BinaryPrimitives.ReadInt64LittleEndian({source}[{offset}..]);",
+            "ulong" or "uint64" => $"{target} = BinaryPrimitives.ReadUInt64LittleEndian({source}[{offset}..]);",
+            "float" or "single" => $"{target} = BinaryPrimitives.ReadSingleLittleEndian({source}[{offset}..]);",
+            "double" => $"{target} = BinaryPrimitives.ReadDoubleLittleEndian({source}[{offset}..]);",
+            _ => $"{target} = {type}.Read({source}[{offset}..]);"
             };
 
-    string GetWriterFunc(string type, int offset, string source) =>
-        type.ToLowerInvariant() switch 
+    string GetWriterFunc(string type, string offset, string source, string target) =>
+        "        " + type.ToLowerInvariant() switch 
         {
-            "bool" or "boolean" => $"span[{offset}] = {source} ? (byte)1 : 0;",
-            "byte" or "uint8" => $"span[{offset}] = {source};",
-            "sbyte" or "int8" => $"span[{offset}] = unchecked((byte){source});",
-            "short" or "int16" => $"BinaryPrimitives.WriteInt16LittleEndian(span[{offset}..], {source});",
-            "ushort" or "uint16" => $"BinaryPrimitives.WriteUInt16LittleEndian(span[{offset}..], {source});",
-            "int" or "int32" => $"BinaryPrimitives.WriteInt32LittleEndian(span[{offset}..], {source});",
-            "uint" or "uint32" => $"BinaryPrimitives.WriteUInt32LittleEndian(span[{offset}..], {source});",
-            "long" or "int64" => $"BinaryPrimitives.WriteInt64LittleEndian(span[{offset}..], {source});",
-            "ulong" or "uint64" => $"BinaryPrimitives.WriteUInt64LittleEndian(span[{offset}..], {source});",
-            "float" or "single" => $"BinaryPrimitives.WriteSingleLittleEndian(span[{offset}..], {source});",
-            "double" => $"BinaryPrimitives.WriteDoubleLittleEndian(span[{offset}..], {source});",
-            _ => $"{source}.CopyTo(MemoryMarshal.Cast<{type}, byte>(span[{offset}..]));"
+            "bool" or "boolean" => $"{target}[{offset}] = {source} ? (byte)1 : 0;",
+            "byte" or "uint8" => $"{target}[{offset}] = {source};",
+            "sbyte" or "int8" => $"{target}[{offset}] = unchecked((byte){source});",
+            "short" or "int16" => $"BinaryPrimitives.WriteInt16LittleEndian({target}[{offset}..], {source});",
+            "ushort" or "uint16" => $"BinaryPrimitives.WriteUInt16LittleEndian({target}[{offset}..], {source});",
+            "int" or "int32" => $"BinaryPrimitives.WriteInt32LittleEndian({target}[{offset}..], {source});",
+            "uint" or "uint32" => $"BinaryPrimitives.WriteUInt32LittleEndian({target}[{offset}..], {source});",
+            "long" or "int64" => $"BinaryPrimitives.WriteInt64LittleEndian({target}[{offset}..], {source});",
+            "ulong" or "uint64" => $"BinaryPrimitives.WriteUInt64LittleEndian({target}[{offset}..], {source});",
+            "float" or "single" => $"BinaryPrimitives.WriteSingleLittleEndian({target}[{offset}..], {source});",
+            "double" => $"BinaryPrimitives.WriteDoubleLittleEndian({target}[{offset}..], {source});",
+            _ => $"{type}.Write({target}[{offset}..], {source});"
             };
 
     var structureLines = File.ReadAllLines(Host.ResolvePath("Structures.txt"));
     string currentStructure = default;
     var structureIsArray = false;
-    var structureLength = 0;
     var readerLines = new List<string>();
     var writerLines = new List<string>();
+    var structureLength = 0;
 
     var lineIndex = 0;
     while (lineIndex < structureLines.Length)
@@ -70,13 +88,13 @@ namespace LibRoton.Structures;
 // Line <#= lineIndex #>
 <#
             // Read structure type.
-            if (!line[0].Equals("begin", StringComparison.OrdinalIgnoreCase))
+            if (!line[0].Equals("begin", ignoreCase))
                 throw new Exception($"Expected 'begin' at {lineIndex}");
 
             if (line.Length < 2)
                 throw new Exception($"Expected 'struct' or array type at {lineIndex}");
 
-            if (line[1].Equals("struct", StringComparison.OrdinalIgnoreCase))
+            if (line[1].Equals("struct", ignoreCase))
             {
                 // Parse 'struct' block.
                 if (line.Length < 3)
@@ -90,13 +108,17 @@ namespace LibRoton.Structures;
                 structureLength = int.Parse(line[3]);
 #>
 [PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = <#= structureLength #>, Pack = 1)]
+[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
 public struct <#= line[2] #>
 {
+    public const int Size = <#= structureLength #>;
+
 <#
                 lineIndex++;
                 continue;
             }
+
+            currentStructure = line[2];
 
             // Parse array block.
             if (line.Length < 3)
@@ -106,12 +128,11 @@ public struct <#= line[2] #>
                 throw new Exception($"Expected array length at {lineIndex}");
 
             structureIsArray = true;
-            currentStructure = line[2];
             structureLength = int.Parse(line[3]);
 #>
 [PublicAPI]
 [InlineArray(Length)]
-public struct <#= line[2] #>
+public struct <#= line[2] #> : IEnumerable<<#= line[1] #>>
 {
     public const int Length = <#= structureLength #>;
 
@@ -128,19 +149,121 @@ public struct <#= line[2] #>
     public static <#= line[2] #> Read(ReadOnlySpan<byte> span) =>
         MemoryMarshal.Cast<byte, <#= line[2] #>>(span)[0];
 
+    public static <#= line[2] #> Read(Stream stream)
+    {
+        Span<<#= line[2] #>> values = stackalloc <#= line[2] #>[1];
+        stream.ReadExactly(MemoryMarshal.Cast<<#= line[2] #>, byte>(values));
+        return values[0];
+    }
+
     public static void Write(Span<byte> span, <#= line[2] #> value) =>
         MemoryMarshal.Cast<byte, <#= line[2] #>>(span)[0] = value;
-<#                
+
+    public static void Write(Stream stream, <#= line[2] #> value)
+    {
+        Span<<#= line[2] #>> values = stackalloc <#= line[2] #>[1];
+        values[0] = value;
+        stream.Write(MemoryMarshal.Cast<<#= line[2] #>, byte>(values));
+    }
+
+    public IEnumerable<<#= line[1] #>> AsEnumerable()
+    {
+        for (var i = 0; i < Length; i++)
+            yield return this[i];
+    }
+
+    public IEnumerator<<#= line[1] #>> GetEnumerator() =>
+        AsEnumerable().GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => 
+        GetEnumerator();
+
+    public <#= line[1] #>[] ToArray() =>
+        AsSpan().ToArray();
+<#
+
             lineIndex++;
             continue;
         }
 
-        if (line[0].Equals("end", StringComparison.OrdinalIgnoreCase))
+        if (line[0].Equals("extend", ignoreCase))
         {
+            if (line.Length < 2)
+                throw new Exception($"Expected extension type at {lineIndex}");
+
+            switch (line[1].ToLowerInvariant())
+            {
+                case "string":
+                    if (line.Length < 3)
+                        throw new Exception($"Expected length field name at {lineIndex}");
+                    if (line.Length < 4)
+                        throw new Exception($"Expected data field name at {lineIndex}");
+#>
+    public string Text
+    {
+        get
+        {
+            var source = <#= line[3] #>.AsSpan();
+            var length = Math.Min(<#= line[2] #>, source.Length);
+            return CodePage437.Encoding.GetString(source[..length]);
+        }
+        set
+        {
+            var target = <#= line[3] #>.AsSpan();
+            var length = CodePage437.Encoding.GetBytes(value, target);
+            Length = (byte)length;
+        }
+    }
+
+<#
+                    break;
+            }
+            
+            lineIndex++;
+            continue;
+        }
+
+        if (line[0].Equals("end", ignoreCase))
+        {
+            if (!structureIsArray)
+            {
+#>
+
+    public static <#= currentStructure #> Read(ReadOnlySpan<byte> span)
+    {
+        var result = new <#= currentStructure #>();
+<#= string.Join(Environment.NewLine, readerLines) #>
+        return result;
+    }
+
+    public static <#= currentStructure #> Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[<#= structureLength #>];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public static void Write(Span<byte> span, <#= currentStructure #> value)
+    {
+<#= string.Join(Environment.NewLine, writerLines) #>
+    }
+
+    public static void Write(Stream stream, <#= currentStructure #> value)
+    {
+        Span<byte> span = stackalloc byte[<#= structureLength #>];
+        Write(span, value);
+        stream.Write(span);
+    }
+<#
+            }
+
 #>
 }
 <#
+            readerLines.Clear();
+            writerLines.Clear();
             currentStructure = null;
+            structureIsArray = false;
             lineIndex++;
             continue;
         }
@@ -153,9 +276,13 @@ public struct <#= line[2] #>
 
         if (line.Length < 3)
             throw new Exception($"Expected field name at {lineIndex}");
+
+        var fieldOffset = int.Parse(line[0]);
 #>
-    [FieldOffset(<#= int.Parse(line[0]) #>)] public <#= line[1] #> <#= line[2] #>;
+    [FieldOffset(<#= fieldOffset #>)] public <#= line[1] #> <#= line[2] #>;
 <#
+        readerLines.Add(GetReaderFunc(line[1], fieldOffset.ToString(), $"result.{line[2]}", "span"));
+        writerLines.Add(GetWriterFunc(line[1], fieldOffset.ToString(), $"value.{line[2]}", "span"));
         lineIndex++;
     }
 #>
