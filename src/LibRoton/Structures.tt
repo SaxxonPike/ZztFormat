@@ -29,20 +29,22 @@ internal static class CodePage437
 <#
     const StringComparison ignoreCase = StringComparison.OrdinalIgnoreCase;
 
+    var endian = "LittleEndian";
+
     string GetReaderFunc(string type, string offset, string target, string source) =>
         "        " + type.ToLowerInvariant() switch 
         {
             "bool" or "boolean" => $"{target} = {source}[{offset}] != 0;",
             "byte" or "uint8" => $"{target} = {source}[{offset}];",
             "sbyte" or "int8" => $"{target} = unchecked((sbyte){source}[{offset}]);",
-            "short" or "int16" => $"{target} = BinaryPrimitives.ReadInt16LittleEndian({source}[{offset}..]);",
-            "ushort" or "uint16" => $"{target} = BinaryPrimitives.ReadUInt16LittleEndian({source}[{offset}..]);",
-            "int" or "int32" => $"{target} = BinaryPrimitives.ReadInt32LittleEndian({source}[{offset}..]);",
-            "uint" or "uint32" => $"{target} = BinaryPrimitives.ReadUInt32LittleEndian({source}[{offset}..]);",
-            "long" or "int64" => $"{target} = BinaryPrimitives.ReadInt64LittleEndian({source}[{offset}..]);",
-            "ulong" or "uint64" => $"{target} = BinaryPrimitives.ReadUInt64LittleEndian({source}[{offset}..]);",
-            "float" or "single" => $"{target} = BinaryPrimitives.ReadSingleLittleEndian({source}[{offset}..]);",
-            "double" => $"{target} = BinaryPrimitives.ReadDoubleLittleEndian({source}[{offset}..]);",
+            "short" or "int16" => $"{target} = BinaryPrimitives.ReadInt16{endian}({source}[{offset}..]);",
+            "ushort" or "uint16" => $"{target} = BinaryPrimitives.ReadUInt16{endian}({source}[{offset}..]);",
+            "int" or "int32" => $"{target} = BinaryPrimitives.ReadInt32{endian}({source}[{offset}..]);",
+            "uint" or "uint32" => $"{target} = BinaryPrimitives.ReadUInt32{endian}({source}[{offset}..]);",
+            "long" or "int64" => $"{target} = BinaryPrimitives.ReadInt64{endian}({source}[{offset}..]);",
+            "ulong" or "uint64" => $"{target} = BinaryPrimitives.ReadUInt64{endian}({source}[{offset}..]);",
+            "float" or "single" => $"{target} = BinaryPrimitives.ReadSingle{endian}({source}[{offset}..]);",
+            "double" => $"{target} = BinaryPrimitives.ReadDouble{endian}({source}[{offset}..]);",
             _ => $"{target} = {type}.Read({source}[{offset}..]);"
             };
 
@@ -52,14 +54,14 @@ internal static class CodePage437
             "bool" or "boolean" => $"{target}[{offset}] = {source} ? (byte)1 : 0;",
             "byte" or "uint8" => $"{target}[{offset}] = {source};",
             "sbyte" or "int8" => $"{target}[{offset}] = unchecked((byte){source});",
-            "short" or "int16" => $"BinaryPrimitives.WriteInt16LittleEndian({target}[{offset}..], {source});",
-            "ushort" or "uint16" => $"BinaryPrimitives.WriteUInt16LittleEndian({target}[{offset}..], {source});",
-            "int" or "int32" => $"BinaryPrimitives.WriteInt32LittleEndian({target}[{offset}..], {source});",
-            "uint" or "uint32" => $"BinaryPrimitives.WriteUInt32LittleEndian({target}[{offset}..], {source});",
-            "long" or "int64" => $"BinaryPrimitives.WriteInt64LittleEndian({target}[{offset}..], {source});",
-            "ulong" or "uint64" => $"BinaryPrimitives.WriteUInt64LittleEndian({target}[{offset}..], {source});",
-            "float" or "single" => $"BinaryPrimitives.WriteSingleLittleEndian({target}[{offset}..], {source});",
-            "double" => $"BinaryPrimitives.WriteDoubleLittleEndian({target}[{offset}..], {source});",
+            "short" or "int16" => $"BinaryPrimitives.WriteInt16{endian}({target}[{offset}..], {source});",
+            "ushort" or "uint16" => $"BinaryPrimitives.WriteUInt16{endian}({target}[{offset}..], {source});",
+            "int" or "int32" => $"BinaryPrimitives.WriteInt32{endian}({target}[{offset}..], {source});",
+            "uint" or "uint32" => $"BinaryPrimitives.WriteUInt32{endian}({target}[{offset}..], {source});",
+            "long" or "int64" => $"BinaryPrimitives.WriteInt64{endian}({target}[{offset}..], {source});",
+            "ulong" or "uint64" => $"BinaryPrimitives.WriteUInt64{endian}({target}[{offset}..], {source});",
+            "float" or "single" => $"BinaryPrimitives.WriteSingle{endian}({target}[{offset}..], {source});",
+            "double" => $"BinaryPrimitives.WriteDouble{endian}({target}[{offset}..], {source});",
             _ => $"{type}.Write({target}[{offset}..], {source});"
             };
 
@@ -184,6 +186,19 @@ public struct <#= line[2] #> : IEnumerable<<#= line[1] #>>
 
             lineIndex++;
             continue;
+        }
+
+        if (line[0].Equals("endian", ignoreCase))
+        {
+            if (line.Length < 2)
+                throw new Exception($"Expected endianness at {lineIndex}");
+
+            endian = line[1].ToLowerInvariant() switch 
+            {
+                "little" => "LittleEndian",
+                "big" => "BigEndian",
+                _ => throw new Exception($"Expected 'big' or 'little' at {lineIndex}")
+            };
         }
 
         if (line[0].Equals("extend", ignoreCase))
