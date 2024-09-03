@@ -1,10 +1,12 @@
-namespace LibRoton.Structures;
+﻿namespace LibRoton.Structures;
 
-public class ZztBoard
+public class ZztBoard : IBoard
 {
-    public ZztBoardName Name { get; set; }
-    public ZztBoardInfo Info { get; set; }
-    public ZztTile[] Tiles { get; set; }
-    public List<ZztActor> Actors { get; set; }
-    public List<byte[]> Scripts { get; set; }
+    public ZztBoardHeader Header { get; set; } = new();
+
+    IBoardHeader IBoard.Header => Header;
+
+    public int Width => 60;
+
+    public int Height => 25;
 }

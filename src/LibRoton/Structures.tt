@@ -2,18 +2,20 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.IO" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ import namespace="System.Linq" #>
 // Automatically generated from Structures.txt
 
 using JetBrains.Annotations;
 using System.Buffers.Binary;
-using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
+// ReSharper disable PartialTypeWithSinglePart
 // ReSharper disable once CheckNamespace
 // ReSharper disable UseObjectOrCollectionInitializer
 namespace LibRoton.Structures;
+
+#region Utilities
 
 internal static class CodePage437
 {
@@ -26,278 +28,504 @@ internal static class CodePage437
 
     public static Encoding Encoding => _encoding.Value;
 }
+
+#endregion
+
+#region Data Types
 <#
     const StringComparison ignoreCase = StringComparison.OrdinalIgnoreCase;
-
-    var endian = "LittleEndian";
-
-    string GetReaderFunc(string type, string offset, string target, string source) =>
-        "        " + type.ToLowerInvariant() switch 
-        {
-            "bool" or "boolean" => $"{target} = {source}[{offset}] != 0;",
-            "byte" or "uint8" => $"{target} = {source}[{offset}];",
-            "sbyte" or "int8" => $"{target} = unchecked((sbyte){source}[{offset}]);",
-            "short" or "int16" => $"{target} = BinaryPrimitives.ReadInt16{endian}({source}[{offset}..]);",
-            "ushort" or "uint16" => $"{target} = BinaryPrimitives.ReadUInt16{endian}({source}[{offset}..]);",
-            "int" or "int32" => $"{target} = BinaryPrimitives.ReadInt32{endian}({source}[{offset}..]);",
-            "uint" or "uint32" => $"{target} = BinaryPrimitives.ReadUInt32{endian}({source}[{offset}..]);",
-            "long" or "int64" => $"{target} = BinaryPrimitives.ReadInt64{endian}({source}[{offset}..]);",
-            "ulong" or "uint64" => $"{target} = BinaryPrimitives.ReadUInt64{endian}({source}[{offset}..]);",
-            "float" or "single" => $"{target} = BinaryPrimitives.ReadSingle{endian}({source}[{offset}..]);",
-            "double" => $"{target} = BinaryPrimitives.ReadDouble{endian}({source}[{offset}..]);",
-            _ => $"{target} = {type}.Read({source}[{offset}..]);"
-            };
-
-    string GetWriterFunc(string type, string offset, string source, string target) =>
-        "        " + type.ToLowerInvariant() switch 
-        {
-            "bool" or "boolean" => $"{target}[{offset}] = {source} ? (byte)1 : 0;",
-            "byte" or "uint8" => $"{target}[{offset}] = {source};",
-            "sbyte" or "int8" => $"{target}[{offset}] = unchecked((byte){source});",
-            "short" or "int16" => $"BinaryPrimitives.WriteInt16{endian}({target}[{offset}..], {source});",
-            "ushort" or "uint16" => $"BinaryPrimitives.WriteUInt16{endian}({target}[{offset}..], {source});",
-            "int" or "int32" => $"BinaryPrimitives.WriteInt32{endian}({target}[{offset}..], {source});",
-            "uint" or "uint32" => $"BinaryPrimitives.WriteUInt32{endian}({target}[{offset}..], {source});",
-            "long" or "int64" => $"BinaryPrimitives.WriteInt64{endian}({target}[{offset}..], {source});",
-            "ulong" or "uint64" => $"BinaryPrimitives.WriteUInt64{endian}({target}[{offset}..], {source});",
-            "float" or "single" => $"BinaryPrimitives.WriteSingle{endian}({target}[{offset}..], {source});",
-            "double" => $"BinaryPrimitives.WriteDouble{endian}({target}[{offset}..], {source});",
-            _ => $"{type}.Write({target}[{offset}..], {source});"
-            };
-
+    var endian = "little";
+    
     var structureLines = File.ReadAllLines(Host.ResolvePath("Structures.txt"));
-    string currentStructure = default;
-    var structureIsArray = false;
-    var readerLines = new List<string>();
-    var writerLines = new List<string>();
-    var structureLength = 0;
+    var lineIndex = -1;
 
-    var lineIndex = 0;
-    while (lineIndex < structureLines.Length)
+    var stringRegex = new Regex(@"^string (?<length>\w+) (?<data>\w+) (?<name>\w+)");
+    var endianRegex = new Regex(@"^endian (?<value>\w+)$", RegexOptions.Singleline);
+    var structRegex = new Regex(@"^struct (?<name>\w+)$", RegexOptions.Singleline);
+    var classRegex = new Regex(@"^class (?<name>\w+)$", RegexOptions.Singleline);
+    var endRegex = new Regex("^end$", RegexOptions.Singleline);
+    var implementsRegex = new Regex(@"^implements (?<name>\w+)$", RegexOptions.Singleline);
+    var arrayPropertyRegex = new Regex(@"^(?<type>\w+)\[(?<size>\d+)\]\s+(?<name>\w+)$", RegexOptions.Singleline);
+    var scalarPropertyRegex = new Regex(@"^(?<type>\w+)\s+(?<name>\w+)$", RegexOptions.Singleline);
+
+    Dictionary<string, string> structKinds = [];
+    Dictionary<string, int> structSizes = [];
+    Dictionary<string, List<string>> structImplements = [];
+    Dictionary<string, Dictionary<string, string>> stringLengthFields = [];
+    Dictionary<string, Dictionary<string, string>> stringDataFields = [];
+    Dictionary<string, Dictionary<string, string>> propertyTypes = [];
+    Dictionary<string, Dictionary<string, string>> propertyEndians = [];
+    Dictionary<string, Dictionary<string, int>> propertyLengths = [];
+    Dictionary<string, Dictionary<string, int>> propertyOffsets = [];
+
+    // Parse structures.
+
+    if (structureLines.Length > 0)
     {
-        // Grab the next line.
-        var line = structureLines[lineIndex].Split([' '], StringSplitOptions.RemoveEmptyEntries);
-        if (line.Length < 1)
+        string currentStructName = default;
+        string currentStructKind = default;
+    
+        void CreateStruct()
         {
-            lineIndex++;
-            continue;
+            structImplements.Add(currentStructName, []);
+            structKinds.Add(currentStructName, currentStructKind);
+            propertyEndians.Add(currentStructName, []);
+            propertyLengths.Add(currentStructName, []);
+            propertyTypes.Add(currentStructName, []);
+            stringLengthFields.Add(currentStructName, []);
+            stringDataFields.Add(currentStructName, []);
         }
 
-        if (currentStructure == null)
+        while (++lineIndex < structureLines.Length)
         {
-#>
-
-// Line <#= lineIndex #>
-<#
-            // Read structure type.
-            if (!line[0].Equals("begin", ignoreCase))
-                throw new Exception($"Expected 'begin' at {lineIndex}");
-
-            if (line.Length < 2)
-                throw new Exception($"Expected 'struct' or array type at {lineIndex}");
-
-            if (line[1].Equals("struct", ignoreCase))
+            var line = structureLines[lineIndex].Trim();
+            if (line.Length < 1)
             {
-                // Parse 'struct' block.
-                if (line.Length < 3)
-                    throw new Exception($"Expected struct name at {lineIndex}");
-
-                if (line.Length < 4)
-                    throw new Exception($"Expected struct size at {lineIndex}");
-
-                structureIsArray = false;
-                currentStructure = line[2];
-                structureLength = int.Parse(line[3]);
-#>
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct <#= line[2] #>
-{
-    public const int Size = <#= structureLength #>;
-
-<#
-                lineIndex++;
                 continue;
             }
 
-            currentStructure = line[2];
-
-            // Parse array block.
-            if (line.Length < 3)
-                throw new Exception($"Expected array name at {lineIndex}");
-
-            if (line.Length < 4)
-                throw new Exception($"Expected array length at {lineIndex}");
-
-            structureIsArray = true;
-            structureLength = int.Parse(line[3]);
-#>
-[PublicAPI]
-[InlineArray(Length)]
-public struct <#= line[2] #> : IEnumerable<<#= line[1] #>>
-{
-    public const int Length = <#= structureLength #>;
-
-    private <#= line[1] #> _element0;
-
-    public static int Size => Length * Marshal.SizeOf<<#= line[1] #>>();
-
-    public Span<<#= line[1] #>> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<<#= line[1] #>> span) =>
-        AsSpan().CopyTo(span);
-
-    public static <#= line[2] #> Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, <#= line[2] #>>(span)[0];
-
-    public static <#= line[2] #> Read(Stream stream)
-    {
-        Span<<#= line[2] #>> values = stackalloc <#= line[2] #>[1];
-        stream.ReadExactly(MemoryMarshal.Cast<<#= line[2] #>, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, <#= line[2] #> value) =>
-        MemoryMarshal.Cast<byte, <#= line[2] #>>(span)[0] = value;
-
-    public static void Write(Stream stream, <#= line[2] #> value)
-    {
-        Span<<#= line[2] #>> values = stackalloc <#= line[2] #>[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<<#= line[2] #>, byte>(values));
-    }
-
-    public IEnumerable<<#= line[1] #>> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<<#= line[1] #>> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public <#= line[1] #>[] ToArray() =>
-        AsSpan().ToArray();
-<#
-
-            lineIndex++;
-            continue;
-        }
-
-        if (line[0].Equals("endian", ignoreCase))
-        {
-            if (line.Length < 2)
-                throw new Exception($"Expected endianness at {lineIndex}");
-
-            endian = line[1].ToLowerInvariant() switch 
+            if (currentStructName == null)
             {
-                "little" => "LittleEndian",
-                "big" => "BigEndian",
-                _ => throw new Exception($"Expected 'big' or 'little' at {lineIndex}")
-            };
-        }
+                if (structRegex.Match(line) is { Success: true } structMatch)
+                {
+                    currentStructKind = "struct";
+                    currentStructName = structMatch.Groups["name"].Value;
+                    CreateStruct();
+                    continue;
+                }
 
-        if (line[0].Equals("extend", ignoreCase))
-        {
-            if (line.Length < 2)
-                throw new Exception($"Expected extension type at {lineIndex}");
+                if (classRegex.Match(line) is { Success: true } classMatch)
+                {
+                    currentStructKind = "class";
+                    currentStructName = classMatch.Groups["name"].Value;
+                    CreateStruct();
+                    continue;
+                }
 
-            switch (line[1].ToLowerInvariant())
+                if (endianRegex.Match(line) is { Success: true } endianMatch)
+                {
+                    endian = endianMatch.Groups["value"].Value switch {
+                        "little" => "little",
+                        "big" => "big",
+                        _ => throw new InvalidOperationException($"Expected (little|big) at {lineIndex}")
+                    };
+                    continue;
+                }
+
+                throw new InvalidOperationException($"Expected (struct|class|endian) at {lineIndex}");
+            }
+
+            if (endRegex.IsMatch(line))
             {
-                case "string":
-                    if (line.Length < 3)
-                        throw new Exception($"Expected length field name at {lineIndex}");
-                    if (line.Length < 4)
-                        throw new Exception($"Expected data field name at {lineIndex}");
-#>
-    public string Text
-    {
-        get
-        {
-            var source = <#= line[3] #>.AsSpan();
-            var length = Math.Min(<#= line[2] #>, source.Length);
-            return CodePage437.Encoding.GetString(source[..length]);
-        }
-        set
-        {
-            var target = <#= line[3] #>.AsSpan();
-            var length = CodePage437.Encoding.GetBytes(value, target);
-            Length = (byte)length;
+                currentStructName = null;
+                currentStructKind = null;
+                continue;
+            }
+
+            if (stringRegex.Match(line) is { Success: true } stringMatch)
+            {
+                var propertyName = stringMatch.Groups["name"].Value;
+                stringLengthFields[currentStructName].Add(propertyName, stringMatch.Groups["length"].Value);
+                stringDataFields[currentStructName].Add(propertyName, stringMatch.Groups["data"].Value);
+                continue;
+            }
+
+            if (implementsRegex.Match(line) is { Success: true } implementsMatch)
+            {
+                structImplements[currentStructName].Add(implementsMatch.Groups["name"].Value);
+                continue;
+            }
+
+            if (arrayPropertyRegex.Match(line) is { Success: true } arrayPropertyMatch)
+            {
+                var propertyName = arrayPropertyMatch.Groups["name"].Value;
+                propertyTypes[currentStructName].Add(propertyName, arrayPropertyMatch.Groups["type"].Value);
+                propertyEndians[currentStructName].Add(propertyName, endian);
+                propertyLengths[currentStructName].Add(propertyName, int.Parse(arrayPropertyMatch.Groups["size"].Value));
+                continue;
+            }
+
+            if (scalarPropertyRegex.Match(line) is { Success: true } scalarPropertyMatch)
+            {
+                var propertyName = scalarPropertyMatch.Groups["name"].Value;
+                propertyTypes[currentStructName].Add(propertyName, scalarPropertyMatch.Groups["type"].Value);
+                propertyEndians[currentStructName].Add(propertyName, endian);
+                continue;
+            }
+
+            throw new InvalidOperationException($"Expected (implements|<type>|<array>) at {lineIndex}");
         }
     }
+    
+    if (structureLines.Length > 0)
+    {
+        int CalculateSize(string structName)
+        {
+            if (structSizes.TryGetValue(structName, out var structSize))
+                return structSize;
 
-<#
-                    break;
+            propertyOffsets.Add(structName, []);
+
+            var result = 0;
+            foreach (var kv1 in propertyTypes[structName])
+            {
+                propertyOffsets[structName].Add(kv1.Key, result);
+                
+                var propType = kv1.Value;
+                var propSize = propType switch
+                {
+                    "byte" or "sbyte" => 1,
+                    "short" or "ushort" => 2,
+                    "int" or "uint" => 4,
+                    "long" or "ulong" => 8,
+                    _ => CalculateSize(propType)
+                };
+
+                propSize *= propertyLengths[structName].TryGetValue(kv1.Key, out var propLength)
+                    ? propLength
+                    : 1;
+
+                result += propSize;
             }
             
-            lineIndex++;
-            continue;
+            structSizes.Add(structName, result);
+            return result;
         }
-
-        if (line[0].Equals("end", ignoreCase))
+        
+        foreach (var kv0 in structKinds)
         {
-            if (!structureIsArray)
-            {
+            var structName = kv0.Key;
+            var structKind = kv0.Value;
+            var structImplSet = string.Join(", ", structImplements.TryGetValue(structName, out var structImpls)
+                ? structImpls
+                : []);
+            var structSize = CalculateSize(structName);
+            
+            if (!string.IsNullOrWhiteSpace(structImplSet))
+                structImplSet = $" : {structImplSet}";
 #>
 
-    public static <#= currentStructure #> Read(ReadOnlySpan<byte> span)
+[PublicAPI]
+public partial <#= structKind #> <#= structName #><#= structImplSet #>
+{
+    public const int Size = <#= structSize #>;
+
+<#
+            if (structKind == "struct")
+            {
+#>
+    public <#= structName #>()
     {
-        var result = new <#= currentStructure #>();
-<#= string.Join(Environment.NewLine, readerLines) #>
-        return result;
     }
 
-    public static <#= currentStructure #> Read(Stream stream)
+<#
+            }
+
+            foreach (var kv2 in propertyTypes[structName])
+            {
+                var propName = kv2.Key;
+                var propIsArray = propertyLengths[structName].TryGetValue(propName, out var propLength);
+                var propType = propIsArray
+                    ? $"{kv2.Value}[]"
+                    : kv2.Value;
+                var propDefault = propIsArray
+                    ? $" = new {kv2.Value}[{propLength}];"
+                    : string.Empty;
+                var propAccess = propIsArray
+                    ? "{ get; init; }"
+                    : "{ get; set; }";
+#>
+    public <#= propType #> <#= propName #> <#= propAccess #><#= propDefault #>
+<#
+            }
+#>
+
+<#
+            foreach (var kv2 in stringDataFields[structName])
+            {
+                var stringFieldName = kv2.Key;
+                var stringDataField = kv2.Value;
+                var stringLengthField = stringLengthFields[structName][stringFieldName];
+                var stringLengthType = propertyTypes[structName][stringLengthField];
+#>
+    public string <#= stringFieldName #>
     {
-        Span<byte> span = stackalloc byte[<#= structureLength #>];
+        get => CodePage437.Encoding.GetString(<#= stringDataField #>[..<#= stringLengthField #>]);
+        set => <#= stringLengthField #> = (<#= stringLengthType #>)CodePage437.Encoding.GetBytes(value, <#= stringDataField #>);
+    }
+
+<#                
+            }
+#>
+    public static <#= structName #> Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, <#= currentStructure #> value)
+    public void Write(Stream stream)
     {
-<#= string.Join(Environment.NewLine, writerLines) #>
-    }
-
-    public static void Write(Stream stream, <#= currentStructure #> value)
-    {
-        Span<byte> span = stackalloc byte[<#= structureLength #>];
-        Write(span, value);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
         stream.Write(span);
     }
-<#
-            }
 
+    public static <#= structName #> Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new <#= structName #>();
+<#
+            foreach (var kv2 in propertyTypes[structName])
+            {
+                var propName = kv2.Key;
+                var propEndian = propertyEndians[structName][propName] switch {
+                    "big" => "BigEndian",
+                    _ => "LittleEndian"
+                };
+                var propType = kv2.Value;
+                var propOffset = propertyOffsets[structName][propName];
+                if (propertyLengths[structName].TryGetValue(propName, out var propLength))
+                {
+                    switch (propType)
+                    {
+                        case "byte":
 #>
+        bytes[<#= propOffset #>..<#= propOffset + propLength #>].CopyTo(result.<#= propName #>);
+<#
+                            break;
+                        case "sbyte":
+#>
+        MemoryMarshal.Cast<byte, <#= propType #>>(bytes.Slice(<#= propOffset #>, <#= propLength #>)).CopyTo(result.<#= propName #>);
+<#
+                            break;
+                        case "short":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
+            result.<#= propName #>[i] = BinaryPrimitives.ReadInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                        case "ushort":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
+            result.<#= propName #>[i] = BinaryPrimitives.ReadUInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                        case "int":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
+            result.<#= propName #>[i] = BinaryPrimitives.ReadInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                        case "uint":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
+            result.<#= propName #>[i] = BinaryPrimitives.ReadUInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                        case "long":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
+            result.<#= propName #>[i] = BinaryPrimitives.ReadInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                        case "ulong":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
+            result.<#= propName #>[i] = BinaryPrimitives.ReadUInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                        default:
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += <#= CalculateSize(propType) #>)
+            result.<#= propName #>[i] = <#= propType #>.Read(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                    }
+                }
+                else
+                {
+                    switch (propType)
+                    {
+                        case "byte":
+#>
+        result.<#= propName #> = bytes[<#= propOffset #>];
+<#
+                            break;
+                        case "sbyte":
+#>
+        result.<#= propName #> = unchecked((sbyte)bytes[<#= propOffset #>]);
+<#
+                            break;
+                        case "short":
+#>
+        result.<#= propName #> = BinaryPrimitives.ReadInt16<#= propEndian #>(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                        case "ushort":
+#>
+        result.<#= propName #> = BinaryPrimitives.ReadUInt16<#= propEndian #>(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                        case "int":
+#>
+        result.<#= propName #> = BinaryPrimitives.ReadInt32<#= propEndian #>(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                        case "uint":
+#>
+        result.<#= propName #> = BinaryPrimitives.ReadUInt32<#= propEndian #>(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                        case "long":
+#>
+        result.<#= propName #> = BinaryPrimitives.ReadInt64<#= propEndian #>(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                        case "ulong":
+#>
+        result.<#= propName #> = BinaryPrimitives.ReadUInt64<#= propEndian #>(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                        default:
+#>
+        result.<#= propName #> = <#= propType #>.Read(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                    }
+                }
+            }
+#>
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+<#
+            foreach (var kv2 in propertyTypes[structName])
+            {
+                var propName = kv2.Key;
+                var propEndian = propertyEndians[structName][propName] switch {
+                    "big" => "BigEndian",
+                    _ => "LittleEndian"
+                };
+                var propType = kv2.Value;
+                var propOffset = propertyOffsets[structName][propName];
+                if (propertyLengths[structName].TryGetValue(propName, out var propLength))
+                {
+                    switch (propType)
+                    {
+                        case "byte":
+#>
+        <#= propName #>.CopyTo(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                        case "sbyte":
+#>
+        <#= propName #>.CopyTo(MemoryMarshal.Cast<byte, sbyte>(bytes[<#= propOffset #>..]));
+<#
+                            break;
+                        case "short":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
+            BinaryPrimitives.WriteInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+<#
+                            break;
+                        case "ushort":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
+            BinaryPrimitives.WriteUInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+<#
+                            break;
+                        case "int":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
+            BinaryPrimitives.WriteInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+<#
+                            break;
+                        case "uint":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
+            BinaryPrimitives.WriteUInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+<#
+                            break;
+                        case "long":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
+            BinaryPrimitives.WriteInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+<#
+                            break;
+                        case "ulong":
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
+            BinaryPrimitives.WriteUInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+<#
+                            break;
+                        default:
+#>
+        for (int i = 0, j = 0; i < <#= propLength #>; i++, j += <#= CalculateSize(propType) #>)
+            <#= propName #>[i].Write(bytes[(<#= propOffset #> + j)..]);
+<#
+                            break;
+                    }
+                }
+                else
+                {
+                    switch (propType)
+                    {
+                        case "byte":
+#>
+        bytes[<#= propOffset #>] = <#= propName #>;
+<#
+                            break;
+                        case "sbyte":
+#>
+        bytes[<#= propOffset #>] = unchecked((byte)<#= propName #>);
+<#
+                            break;
+                        case "short":
+#>
+        BinaryPrimitives.WriteInt16<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+<#
+                            break;
+                        case "ushort":
+#>
+        BinaryPrimitives.WriteUInt16<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+<#
+                            break;
+                        case "int":
+#>
+        BinaryPrimitives.WriteInt32<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+<#
+                            break;
+                        case "uint":
+#>
+        BinaryPrimitives.WriteUInt32<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+<#
+                            break;
+                        case "long":
+#>
+        BinaryPrimitives.WriteInt64<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+<#
+                            break;
+                        case "ulong":
+#>
+        BinaryPrimitives.WriteUInt64<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+<#
+                            break;
+                        default:
+#>
+        <#= propName #>.Write(bytes[<#= propOffset #>..]);
+<#
+                            break;
+                    }
+                }
+            }
+#>
+    }
 }
 <#
-            readerLines.Clear();
-            writerLines.Clear();
-            currentStructure = null;
-            structureIsArray = false;
-            lineIndex++;
-            continue;
         }
-
-        if (structureIsArray)
-            throw new Exception($"Expected 'end' at {lineIndex}");
-
-        if (line.Length < 2)
-            throw new Exception($"Expected field type at {lineIndex}");
-
-        if (line.Length < 3)
-            throw new Exception($"Expected field name at {lineIndex}");
-
-        var fieldOffset = int.Parse(line[0]);
-#>
-    [FieldOffset(<#= fieldOffset #>)] public <#= line[1] #> <#= line[2] #>;
-<#
-        readerLines.Add(GetReaderFunc(line[1], fieldOffset.ToString(), $"result.{line[2]}", "span"));
-        writerLines.Add(GetWriterFunc(line[1], fieldOffset.ToString(), $"value.{line[2]}", "span"));
-        lineIndex++;
     }
 #>
+
+#endregion

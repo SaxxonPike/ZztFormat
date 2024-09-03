@@ -1,251 +1,236 @@
-﻿begin struct ZztActor 33
-0   ZztPosition Position
-2   ZztVector Step
-6   short Cycle
-8   ZztActorParameters Parameters
-11  short Follower
-13  short Leader
-15  ZztTile Under
-17  int Pointer
-21  short Instruction
-23  short Length
-25  ZztActorExtra Extra
+﻿endian little
+
+class ZztActor
+implements IActor
+Position Position
+Vector Step
+short Cycle
+byte[3] Parameters
+short Follower
+short Leader
+Tile Under
+int Pointer
+short Instruction
+short Length
+byte[8] Extra
 end
 
-begin byte ZztActorExtra 8
+class SuperZztActor
+implements IActor
+Position Position
+Vector Step
+short Cycle
+byte[3] Parameters
+short Follower
+short Leader
+Tile Under
+int Pointer
+short Instruction
+short Length
 end
 
-begin byte ZztActorParameters 3
+class ZztBoardHeader
+implements IBoardHeader
+short DataSize
+byte NameLength
+byte[50] NameBytes
+string NameLength NameBytes Name
 end
 
-begin byte ZztBoardExits 4
-end
-
-begin byte ZztBoardExtra 16
-end
-
-begin struct ZztBoardHeader 53
-0   short Length
-2   ZztBoardName Name
-end
-
-begin struct ZztBoardInfo 88
-0   byte MaxShots
-1   byte IsDark
-2   ZztBoardExits Exits
-6   byte RestartOnZap
-7   ZztBoardMessage Message
-66  ZztPosition Enter
-68  short TimeLimit
-70  ZztBoardExtra Extra
-86  short ActorCount
-end
-
-begin struct ZztBoardMessage 59
-extend string Length Bytes
-0   byte Length
-1   ZztBoardMessageBytes Bytes
-end
-
-begin byte ZztBoardMessageBytes 58
-end
-
-begin struct ZztBoardName 51
-extend string Length Bytes
-0   byte Length
-1   ZztBoardNameBytes Bytes
+class SuperZztBoardHeader
+implements IBoardHeader
+short DataSize
+byte NameLength
+byte[60] NameBytes
+string NameLength NameBytes Name
 end 
 
-begin byte ZztBoardNameBytes 50
+class ZztBoardInfo
+implements IBoardInfo
+byte MaxShots
+byte DarkBit
+byte[4] Exits
+byte RestartOnZapBit
+byte MessageLength
+byte[58] MessageBytes
+Position Enter
+short TimeLimit
+byte[16] Extra
+short ActorCount
+string MessageLength MessageBytes Message
 end
 
-begin struct ZztElement 195
-0   byte Character
-1   byte Color
-2   byte IsDestructible
-3   byte IsPushable
-4   byte IsAlwaysVisible
-5   byte IsEditorFloor
-6   byte IsFloor
-7   byte HasDrawFunc
-8   int DrawFunc
-12  short Cycle
-14  int ActFunc
-18  int InteractFunc
-22  short Menu
-24  byte MenuKey
-25  ZztElementString Name
-46  ZztElementString EditorCategoryText
-67  ZztElementString EditorP1Text
-88  ZztElementString EditorP2Text
-109 ZztElementString EditorP3Text
-130 ZztElementString EditorBoardText
-151 ZztElementString EditorStepText
-172 ZztElementString EditorCodeText
-193 short Score
+class SuperZztBoardInfo
+implements IBoardInfo
+byte MaxShots
+byte[4] Exits
+byte RestartOnZapBit
+Position Enter
+Vector Camera
+short TimeLimit
+byte[14] Extra
+short ActorCount
 end
 
-begin struct ZztElementString 21
-extend string Length Bytes
-0   byte Length
-1   ZztElementStringBytes Bytes
+class ZztElementProperties
+implements IElementProperties
+byte Character
+byte Color
+byte DestructibleBit
+byte PushableBit
+byte AlwaysVisibleBit
+byte EditorFloorBit
+byte FloorBit
+byte DrawFuncBit
+int DrawFunc
+short Cycle
+int ActFunc
+int InteractFunc
+short Menu
+byte MenuKey
+byte NameLength
+byte[20] NameBytes
+byte EditorCategoryTextLength
+byte[20] EditorCategoryTextBytes
+byte EditorP1TextLength
+byte[20] EditorP1TextBytes
+byte EditorP2TextLength
+byte[20] EditorP2TextBytes
+byte EditorP3TextLength
+byte[20] EditorP3TextBytes
+byte EditorBoardTextLength
+byte[20] EditorBoardTextBytes
+byte EditorStepTextLength
+byte[20] EditorStepTextBytes
+byte EditorCodeTextLength
+byte[20] EditorCodeTextBytes
+short Score
+string NameLength NameBytes Name
+string EditorCategoryTextLength EditorCategoryTextBytes EditorCategoryText
+string EditorP1TextLength EditorP1TextBytes EditorP1Text
+string EditorP2TextLength EditorP2TextBytes EditorP2Text
+string EditorP3TextLength EditorP3TextBytes EditorP3Text
+string EditorBoardTextLength EditorBoardTextBytes EditorBoardText
+string EditorStepTextLength EditorStepTextBytes EditorStepText
+string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
-begin byte ZztElementStringBytes 20
+class SuperZztElementProperties
+implements IElementProperties
+byte Character
+byte Color
+byte DestructibleBit
+byte PushableBit
+byte EditorFloorBit
+byte FloorBit
+byte DrawFuncBit
+int DrawFunc
+short Cycle
+int ActFunc
+int InteractFunc
+short Menu
+byte MenuKey
+byte NameLength
+byte[20] NameBytes
+byte EditorCategoryTextLength
+byte[20] EditorCategoryTextBytes
+byte EditorP1TextLength
+byte[20] EditorP1TextBytes
+byte EditorP2TextLength
+byte[20] EditorP2TextBytes
+byte EditorP3TextLength
+byte[20] EditorP3TextBytes
+byte EditorBoardTextLength
+byte[20] EditorBoardTextBytes
+byte EditorStepTextLength
+byte[20] EditorStepTextBytes
+byte EditorCodeTextLength
+byte[20] EditorCodeTextBytes
+short Score
+string NameLength NameBytes Name
+string EditorCategoryTextLength EditorCategoryTextBytes EditorCategoryText
+string EditorP1TextLength EditorP1TextBytes EditorP1Text
+string EditorP2TextLength EditorP2TextBytes EditorP2Text
+string EditorP3TextLength EditorP3TextBytes EditorP3Text
+string EditorBoardTextLength EditorBoardTextBytes EditorBoardText
+string EditorStepTextLength EditorStepTextBytes EditorStepText
+string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
-begin struct ZztPosition 2
-0   byte X
-1   byte Y
+class ZztWorldHeader
+implements IWorldHeader
+short Type
+short BoardCount
+short Ammo
+short Gems
+byte[7] Keys
+short Health
+short Board
+short Torches
+short TorchCycles
+short EnergyCycles
+short Unused25
+short Score
+byte NameLength
+byte[20] NameBytes
+Flag[10] Flags
+DosTime TimePassed
+byte Locked
+byte[247] Extra
+string NameLength NameBytes Name
 end
 
-begin struct ZztTile 2
-0   byte Element
-1   byte Color
+class SuperZztWorldHeader
+implements IWorldHeader
+short Type
+short BoardCount
+short Ammo
+short Gems
+byte[7] Keys
+short Health
+short Board
+short Unused19
+short Score
+short Unused23
+short EnergyCycles
+byte NameLength
+byte[20] NameBytes
+Flag[16] Flags
+DosTime TimePassed
+byte Locked
+short Stones
+byte[633] Extra
+string NameLength NameBytes Name
 end
 
-begin struct ZztTileRle 3
-0   byte Count
-1   byte Element
-2   byte Color
+struct Position
+byte X
+byte Y
 end
 
-begin struct ZztTime 4
-0   short Seconds
-2   short Fraction
+struct Tile
+byte ElementId
+byte Color
 end
 
-begin struct ZztVector 4
-0   short X
-2   short Y
+struct TileRle
+byte Count
+byte ElementId
+byte Color
 end
 
-begin byte ZztWorldExtra 247
+struct DosTime
+short Seconds
+short Fraction
 end
 
-begin ZztWorldString ZztWorldFlags 10
+struct Vector
+short X
+short Y
 end
 
-begin struct ZztWorldHeader 512
-0   short Type
-2   short BoardCount
-4   short Ammo
-6   short Gems
-8   ZztWorldKeys Keys
-15  short Health
-17  short Board
-19  short Torches
-21  short TorchCycles
-23  short EnergyCycles
-25  short Unused25
-27  short Score
-29  ZztWorldString Name
-50  ZztWorldFlags Flags
-260 ZztTime TimePassed
-264 byte Locked
-265 ZztWorldExtra Extra
-end
-
-begin byte ZztWorldKeys 7
-end
-
-begin struct ZztWorldString 21
-extend string Length Bytes
-0   byte Length
-1   ZztWorldStringBytes Bytes
-end
-
-begin byte ZztWorldStringBytes 20
-end
-
-begin struct SuperZztActor 25
-0   ZztPosition Position
-2   ZztVector Step
-6   short Cycle
-8   ZztActorParameters Parameters
-11  short Follower
-13  short Leader
-15  ZztTile Under
-17  int Pointer
-21  short Instruction
-23  short Length
-end
-
-begin byte SuperZztBoardExtra 14
-end
-
-begin struct SuperZztBoardHeader 63
-0   short Length
-2   SuperZztBoardName Name
-end
-
-begin struct SuperZztBoardInfo 30
-0   byte MaxShots
-1   ZztBoardExits Exits
-5   byte RestartOnZap
-6   ZztPosition Enter
-8   ZztVector Camera
-12  short TimeLimit
-14  SuperZztBoardExtra Extra
-28  short ActorCount
-end
-
-begin struct SuperZztBoardName 61
-extend string Length Bytes
-0   byte Length
-1   SuperZztBoardNameBytes Bytes
-end
-
-begin byte SuperZztBoardNameBytes 60
-end
-
-begin struct SuperZztElement 194
-0   byte Character
-1   byte Color
-2   byte IsDestructible
-3   byte IsPushable
-4   byte IsEditorFloor
-5   byte IsFloor
-6   byte HasDrawFunc
-7   int DrawFunc
-11  short Cycle
-13  int ActFunc
-17  int InteractFunc
-21  short Menu
-23  byte MenuKey
-24  ZztElementString Name
-45  ZztElementString EditorCategoryText
-66  ZztElementString EditorP1Text
-87  ZztElementString EditorP2Text
-108 ZztElementString EditorP3Text
-129 ZztElementString EditorBoardText
-150 ZztElementString EditorStepText
-171 ZztElementString EditorCodeText
-192 short Score
-end
-
-begin byte SuperZztWorldExtra 633
-end
-
-begin ZztWorldString SuperZztWorldFlags 16
-end
-
-begin struct SuperZztWorldHeader 1024
-0   short Type
-2   short BoardCount
-4   short Ammo
-6   short Gems
-8   ZztWorldKeys Keys
-15  short Health
-17  short Board
-19  short Unused19
-21  short Score
-23  short Unused23
-25  short EnergyCycles
-27  ZztWorldString Name
-48  SuperZztWorldFlags Flags
-384 ZztTime TimePassed
-388 byte Locked
-389 short Stones
-391 SuperZztWorldExtra Extra
+struct Flag
+byte Length
+byte[20] Bytes
+string Length Bytes Text
 end

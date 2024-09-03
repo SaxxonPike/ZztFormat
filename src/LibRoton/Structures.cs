@@ -2,14 +2,14 @@
 
 using JetBrains.Annotations;
 using System.Buffers.Binary;
-using System.Collections;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
+// ReSharper disable PartialTypeWithSinglePart
 // ReSharper disable once CheckNamespace
 // ReSharper disable UseObjectOrCollectionInitializer
 namespace LibRoton.Structures;
+
+#region Utilities
 
 internal static class CodePage437
 {
@@ -23,1963 +23,1129 @@ internal static class CodePage437
     public static Encoding Encoding => _encoding.Value;
 }
 
-// Line 0
+#endregion
+
+#region Data Types
+
 [PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztActor
+public partial class ZztActor : IActor
 {
     public const int Size = 33;
 
-    [FieldOffset(0)] public ZztPosition Position;
-    [FieldOffset(2)] public ZztVector Step;
-    [FieldOffset(6)] public short Cycle;
-    [FieldOffset(8)] public ZztActorParameters Parameters;
-    [FieldOffset(11)] public short Follower;
-    [FieldOffset(13)] public short Leader;
-    [FieldOffset(15)] public ZztTile Under;
-    [FieldOffset(17)] public int Pointer;
-    [FieldOffset(21)] public short Instruction;
-    [FieldOffset(23)] public short Length;
-    [FieldOffset(25)] public ZztActorExtra Extra;
-
-    public static ZztActor Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztActor();
-        result.Position = ZztPosition.Read(span[0..]);
-        result.Step = ZztVector.Read(span[2..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(span[6..]);
-        result.Parameters = ZztActorParameters.Read(span[8..]);
-        result.Follower = BinaryPrimitives.ReadInt16LittleEndian(span[11..]);
-        result.Leader = BinaryPrimitives.ReadInt16LittleEndian(span[13..]);
-        result.Under = ZztTile.Read(span[15..]);
-        result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(span[17..]);
-        result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(span[21..]);
-        result.Length = BinaryPrimitives.ReadInt16LittleEndian(span[23..]);
-        result.Extra = ZztActorExtra.Read(span[25..]);
-        return result;
-    }
+    public Position Position { get; set; }
+    public Vector Step { get; set; }
+    public short Cycle { get; set; }
+    public byte[] Parameters { get; init; } = new byte[3];
+    public short Follower { get; set; }
+    public short Leader { get; set; }
+    public Tile Under { get; set; }
+    public int Pointer { get; set; }
+    public short Instruction { get; set; }
+    public short Length { get; set; }
+    public byte[] Extra { get; init; } = new byte[8];
 
     public static ZztActor Read(Stream stream)
     {
-        Span<byte> span = stackalloc byte[33];
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, ZztActor value)
+    public void Write(Stream stream)
     {
-        ZztPosition.Write(span[0..], value.Position);
-        ZztVector.Write(span[2..], value.Step);
-        BinaryPrimitives.WriteInt16LittleEndian(span[6..], value.Cycle);
-        ZztActorParameters.Write(span[8..], value.Parameters);
-        BinaryPrimitives.WriteInt16LittleEndian(span[11..], value.Follower);
-        BinaryPrimitives.WriteInt16LittleEndian(span[13..], value.Leader);
-        ZztTile.Write(span[15..], value.Under);
-        BinaryPrimitives.WriteInt32LittleEndian(span[17..], value.Pointer);
-        BinaryPrimitives.WriteInt16LittleEndian(span[21..], value.Instruction);
-        BinaryPrimitives.WriteInt16LittleEndian(span[23..], value.Length);
-        ZztActorExtra.Write(span[25..], value.Extra);
-    }
-
-    public static void Write(Stream stream, ZztActor value)
-    {
-        Span<byte> span = stackalloc byte[33];
-        Write(span, value);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
         stream.Write(span);
     }
+
+    public static ZztActor Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new ZztActor();
+        result.Position = Position.Read(bytes[0..]);
+        result.Step = Vector.Read(bytes[2..]);
+        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
+        bytes[8..11].CopyTo(result.Parameters);
+        result.Follower = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
+        result.Leader = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
+        result.Under = Tile.Read(bytes[15..]);
+        result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
+        result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.Length = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        bytes[25..33].CopyTo(result.Extra);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        Position.Write(bytes[0..]);
+        Step.Write(bytes[2..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Cycle);
+        Parameters.CopyTo(bytes[8..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[11..], Follower);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Leader);
+        Under.Write(bytes[15..]);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[17..], Pointer);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Instruction);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Length);
+        Extra.CopyTo(bytes[25..]);
+    }
 }
 
-// Line 14
 [PublicAPI]
-[InlineArray(Length)]
-public struct ZztActorExtra : IEnumerable<byte>
+public partial class SuperZztActor : IActor
 {
-    public const int Length = 8;
+    public const int Size = 25;
 
-    private byte _element0;
+    public Position Position { get; set; }
+    public Vector Step { get; set; }
+    public short Cycle { get; set; }
+    public byte[] Parameters { get; init; } = new byte[3];
+    public short Follower { get; set; }
+    public short Leader { get; set; }
+    public Tile Under { get; set; }
+    public int Pointer { get; set; }
+    public short Instruction { get; set; }
+    public short Length { get; set; }
 
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztActorExtra Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztActorExtra>(span)[0];
-
-    public static ZztActorExtra Read(Stream stream)
+    public static SuperZztActor Read(Stream stream)
     {
-        Span<ZztActorExtra> values = stackalloc ZztActorExtra[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztActorExtra, byte>(values));
-        return values[0];
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
     }
 
-    public static void Write(Span<byte> span, ZztActorExtra value) =>
-        MemoryMarshal.Cast<byte, ZztActorExtra>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztActorExtra value)
+    public void Write(Stream stream)
     {
-        Span<ZztActorExtra> values = stackalloc ZztActorExtra[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztActorExtra, byte>(values));
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
     }
 
-    public IEnumerable<byte> AsEnumerable()
+    public static SuperZztActor Read(ReadOnlySpan<byte> bytes)
     {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
+        var result = new SuperZztActor();
+        result.Position = Position.Read(bytes[0..]);
+        result.Step = Vector.Read(bytes[2..]);
+        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
+        bytes[8..11].CopyTo(result.Parameters);
+        result.Follower = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
+        result.Leader = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
+        result.Under = Tile.Read(bytes[15..]);
+        result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
+        result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.Length = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        return result;
     }
 
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
+    public void Write(Span<byte> bytes)
+    {
+        Position.Write(bytes[0..]);
+        Step.Write(bytes[2..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Cycle);
+        Parameters.CopyTo(bytes[8..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[11..], Follower);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Leader);
+        Under.Write(bytes[15..]);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[17..], Pointer);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Instruction);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Length);
+    }
 }
 
-// Line 17
 [PublicAPI]
-[InlineArray(Length)]
-public struct ZztActorParameters : IEnumerable<byte>
-{
-    public const int Length = 3;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztActorParameters Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztActorParameters>(span)[0];
-
-    public static ZztActorParameters Read(Stream stream)
-    {
-        Span<ZztActorParameters> values = stackalloc ZztActorParameters[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztActorParameters, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztActorParameters value) =>
-        MemoryMarshal.Cast<byte, ZztActorParameters>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztActorParameters value)
-    {
-        Span<ZztActorParameters> values = stackalloc ZztActorParameters[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztActorParameters, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 20
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztBoardExits : IEnumerable<byte>
-{
-    public const int Length = 4;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztBoardExits Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztBoardExits>(span)[0];
-
-    public static ZztBoardExits Read(Stream stream)
-    {
-        Span<ZztBoardExits> values = stackalloc ZztBoardExits[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztBoardExits, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztBoardExits value) =>
-        MemoryMarshal.Cast<byte, ZztBoardExits>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztBoardExits value)
-    {
-        Span<ZztBoardExits> values = stackalloc ZztBoardExits[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztBoardExits, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 23
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztBoardExtra : IEnumerable<byte>
-{
-    public const int Length = 16;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztBoardExtra Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztBoardExtra>(span)[0];
-
-    public static ZztBoardExtra Read(Stream stream)
-    {
-        Span<ZztBoardExtra> values = stackalloc ZztBoardExtra[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztBoardExtra, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztBoardExtra value) =>
-        MemoryMarshal.Cast<byte, ZztBoardExtra>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztBoardExtra value)
-    {
-        Span<ZztBoardExtra> values = stackalloc ZztBoardExtra[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztBoardExtra, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 26
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztBoardHeader
+public partial class ZztBoardHeader : IBoardHeader
 {
     public const int Size = 53;
 
-    [FieldOffset(0)] public short Length;
-    [FieldOffset(2)] public ZztBoardName Name;
+    public short DataSize { get; set; }
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[50];
 
-    public static ZztBoardHeader Read(ReadOnlySpan<byte> span)
+    public string Name
     {
-        var result = new ZztBoardHeader();
-        result.Length = BinaryPrimitives.ReadInt16LittleEndian(span[0..]);
-        result.Name = ZztBoardName.Read(span[2..]);
-        return result;
+        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
     public static ZztBoardHeader Read(Stream stream)
     {
-        Span<byte> span = stackalloc byte[53];
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, ZztBoardHeader value)
+    public void Write(Stream stream)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(span[0..], value.Length);
-        ZztBoardName.Write(span[2..], value.Name);
-    }
-
-    public static void Write(Stream stream, ZztBoardHeader value)
-    {
-        Span<byte> span = stackalloc byte[53];
-        Write(span, value);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
         stream.Write(span);
     }
-}
 
-// Line 31
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztBoardInfo
-{
-    public const int Size = 88;
-
-    [FieldOffset(0)] public byte MaxShots;
-    [FieldOffset(1)] public byte IsDark;
-    [FieldOffset(2)] public ZztBoardExits Exits;
-    [FieldOffset(6)] public byte RestartOnZap;
-    [FieldOffset(7)] public ZztBoardMessage Message;
-    [FieldOffset(66)] public ZztPosition Enter;
-    [FieldOffset(68)] public short TimeLimit;
-    [FieldOffset(70)] public ZztBoardExtra Extra;
-    [FieldOffset(86)] public short ActorCount;
-
-    public static ZztBoardInfo Read(ReadOnlySpan<byte> span)
+    public static ZztBoardHeader Read(ReadOnlySpan<byte> bytes)
     {
-        var result = new ZztBoardInfo();
-        result.MaxShots = span[0];
-        result.IsDark = span[1];
-        result.Exits = ZztBoardExits.Read(span[2..]);
-        result.RestartOnZap = span[6];
-        result.Message = ZztBoardMessage.Read(span[7..]);
-        result.Enter = ZztPosition.Read(span[66..]);
-        result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(span[68..]);
-        result.Extra = ZztBoardExtra.Read(span[70..]);
-        result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(span[86..]);
+        var result = new ZztBoardHeader();
+        result.DataSize = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.NameLength = bytes[2];
+        bytes[3..53].CopyTo(result.NameBytes);
         return result;
     }
 
-    public static ZztBoardInfo Read(Stream stream)
+    public void Write(Span<byte> bytes)
     {
-        Span<byte> span = stackalloc byte[88];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztBoardInfo value)
-    {
-        span[0] = value.MaxShots;
-        span[1] = value.IsDark;
-        ZztBoardExits.Write(span[2..], value.Exits);
-        span[6] = value.RestartOnZap;
-        ZztBoardMessage.Write(span[7..], value.Message);
-        ZztPosition.Write(span[66..], value.Enter);
-        BinaryPrimitives.WriteInt16LittleEndian(span[68..], value.TimeLimit);
-        ZztBoardExtra.Write(span[70..], value.Extra);
-        BinaryPrimitives.WriteInt16LittleEndian(span[86..], value.ActorCount);
-    }
-
-    public static void Write(Stream stream, ZztBoardInfo value)
-    {
-        Span<byte> span = stackalloc byte[88];
-        Write(span, value);
-        stream.Write(span);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], DataSize);
+        bytes[2] = NameLength;
+        NameBytes.CopyTo(bytes[3..]);
     }
 }
 
-// Line 43
 [PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztBoardMessage
-{
-    public const int Size = 59;
-
-    public string Text
-    {
-        get
-        {
-            var source = Bytes.AsSpan();
-            var length = Math.Min(Length, source.Length);
-            return CodePage437.Encoding.GetString(source[..length]);
-        }
-        set
-        {
-            var target = Bytes.AsSpan();
-            var length = CodePage437.Encoding.GetBytes(value, target);
-            Length = (byte)length;
-        }
-    }
-
-    [FieldOffset(0)] public byte Length;
-    [FieldOffset(1)] public ZztBoardMessageBytes Bytes;
-
-    public static ZztBoardMessage Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztBoardMessage();
-        result.Length = span[0];
-        result.Bytes = ZztBoardMessageBytes.Read(span[1..]);
-        return result;
-    }
-
-    public static ZztBoardMessage Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[59];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztBoardMessage value)
-    {
-        span[0] = value.Length;
-        ZztBoardMessageBytes.Write(span[1..], value.Bytes);
-    }
-
-    public static void Write(Stream stream, ZztBoardMessage value)
-    {
-        Span<byte> span = stackalloc byte[59];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 49
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztBoardMessageBytes : IEnumerable<byte>
-{
-    public const int Length = 58;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztBoardMessageBytes Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztBoardMessageBytes>(span)[0];
-
-    public static ZztBoardMessageBytes Read(Stream stream)
-    {
-        Span<ZztBoardMessageBytes> values = stackalloc ZztBoardMessageBytes[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztBoardMessageBytes, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztBoardMessageBytes value) =>
-        MemoryMarshal.Cast<byte, ZztBoardMessageBytes>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztBoardMessageBytes value)
-    {
-        Span<ZztBoardMessageBytes> values = stackalloc ZztBoardMessageBytes[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztBoardMessageBytes, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 52
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztBoardName
-{
-    public const int Size = 51;
-
-    public string Text
-    {
-        get
-        {
-            var source = Bytes.AsSpan();
-            var length = Math.Min(Length, source.Length);
-            return CodePage437.Encoding.GetString(source[..length]);
-        }
-        set
-        {
-            var target = Bytes.AsSpan();
-            var length = CodePage437.Encoding.GetBytes(value, target);
-            Length = (byte)length;
-        }
-    }
-
-    [FieldOffset(0)] public byte Length;
-    [FieldOffset(1)] public ZztBoardNameBytes Bytes;
-
-    public static ZztBoardName Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztBoardName();
-        result.Length = span[0];
-        result.Bytes = ZztBoardNameBytes.Read(span[1..]);
-        return result;
-    }
-
-    public static ZztBoardName Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[51];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztBoardName value)
-    {
-        span[0] = value.Length;
-        ZztBoardNameBytes.Write(span[1..], value.Bytes);
-    }
-
-    public static void Write(Stream stream, ZztBoardName value)
-    {
-        Span<byte> span = stackalloc byte[51];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 58
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztBoardNameBytes : IEnumerable<byte>
-{
-    public const int Length = 50;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztBoardNameBytes Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztBoardNameBytes>(span)[0];
-
-    public static ZztBoardNameBytes Read(Stream stream)
-    {
-        Span<ZztBoardNameBytes> values = stackalloc ZztBoardNameBytes[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztBoardNameBytes, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztBoardNameBytes value) =>
-        MemoryMarshal.Cast<byte, ZztBoardNameBytes>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztBoardNameBytes value)
-    {
-        Span<ZztBoardNameBytes> values = stackalloc ZztBoardNameBytes[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztBoardNameBytes, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 61
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztElement
-{
-    public const int Size = 195;
-
-    [FieldOffset(0)] public byte Character;
-    [FieldOffset(1)] public byte Color;
-    [FieldOffset(2)] public byte IsDestructible;
-    [FieldOffset(3)] public byte IsPushable;
-    [FieldOffset(4)] public byte IsAlwaysVisible;
-    [FieldOffset(5)] public byte IsEditorFloor;
-    [FieldOffset(6)] public byte IsFloor;
-    [FieldOffset(7)] public byte HasDrawFunc;
-    [FieldOffset(8)] public int DrawFunc;
-    [FieldOffset(12)] public short Cycle;
-    [FieldOffset(14)] public int ActFunc;
-    [FieldOffset(18)] public int InteractFunc;
-    [FieldOffset(22)] public short Menu;
-    [FieldOffset(24)] public byte MenuKey;
-    [FieldOffset(25)] public ZztElementString Name;
-    [FieldOffset(46)] public ZztElementString EditorCategoryText;
-    [FieldOffset(67)] public ZztElementString EditorP1Text;
-    [FieldOffset(88)] public ZztElementString EditorP2Text;
-    [FieldOffset(109)] public ZztElementString EditorP3Text;
-    [FieldOffset(130)] public ZztElementString EditorBoardText;
-    [FieldOffset(151)] public ZztElementString EditorStepText;
-    [FieldOffset(172)] public ZztElementString EditorCodeText;
-    [FieldOffset(193)] public short Score;
-
-    public static ZztElement Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztElement();
-        result.Character = span[0];
-        result.Color = span[1];
-        result.IsDestructible = span[2];
-        result.IsPushable = span[3];
-        result.IsAlwaysVisible = span[4];
-        result.IsEditorFloor = span[5];
-        result.IsFloor = span[6];
-        result.HasDrawFunc = span[7];
-        result.DrawFunc = BinaryPrimitives.ReadInt32LittleEndian(span[8..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(span[12..]);
-        result.ActFunc = BinaryPrimitives.ReadInt32LittleEndian(span[14..]);
-        result.InteractFunc = BinaryPrimitives.ReadInt32LittleEndian(span[18..]);
-        result.Menu = BinaryPrimitives.ReadInt16LittleEndian(span[22..]);
-        result.MenuKey = span[24];
-        result.Name = ZztElementString.Read(span[25..]);
-        result.EditorCategoryText = ZztElementString.Read(span[46..]);
-        result.EditorP1Text = ZztElementString.Read(span[67..]);
-        result.EditorP2Text = ZztElementString.Read(span[88..]);
-        result.EditorP3Text = ZztElementString.Read(span[109..]);
-        result.EditorBoardText = ZztElementString.Read(span[130..]);
-        result.EditorStepText = ZztElementString.Read(span[151..]);
-        result.EditorCodeText = ZztElementString.Read(span[172..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(span[193..]);
-        return result;
-    }
-
-    public static ZztElement Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[195];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztElement value)
-    {
-        span[0] = value.Character;
-        span[1] = value.Color;
-        span[2] = value.IsDestructible;
-        span[3] = value.IsPushable;
-        span[4] = value.IsAlwaysVisible;
-        span[5] = value.IsEditorFloor;
-        span[6] = value.IsFloor;
-        span[7] = value.HasDrawFunc;
-        BinaryPrimitives.WriteInt32LittleEndian(span[8..], value.DrawFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(span[12..], value.Cycle);
-        BinaryPrimitives.WriteInt32LittleEndian(span[14..], value.ActFunc);
-        BinaryPrimitives.WriteInt32LittleEndian(span[18..], value.InteractFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(span[22..], value.Menu);
-        span[24] = value.MenuKey;
-        ZztElementString.Write(span[25..], value.Name);
-        ZztElementString.Write(span[46..], value.EditorCategoryText);
-        ZztElementString.Write(span[67..], value.EditorP1Text);
-        ZztElementString.Write(span[88..], value.EditorP2Text);
-        ZztElementString.Write(span[109..], value.EditorP3Text);
-        ZztElementString.Write(span[130..], value.EditorBoardText);
-        ZztElementString.Write(span[151..], value.EditorStepText);
-        ZztElementString.Write(span[172..], value.EditorCodeText);
-        BinaryPrimitives.WriteInt16LittleEndian(span[193..], value.Score);
-    }
-
-    public static void Write(Stream stream, ZztElement value)
-    {
-        Span<byte> span = stackalloc byte[195];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 87
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztElementString
-{
-    public const int Size = 21;
-
-    public string Text
-    {
-        get
-        {
-            var source = Bytes.AsSpan();
-            var length = Math.Min(Length, source.Length);
-            return CodePage437.Encoding.GetString(source[..length]);
-        }
-        set
-        {
-            var target = Bytes.AsSpan();
-            var length = CodePage437.Encoding.GetBytes(value, target);
-            Length = (byte)length;
-        }
-    }
-
-    [FieldOffset(0)] public byte Length;
-    [FieldOffset(1)] public ZztElementStringBytes Bytes;
-
-    public static ZztElementString Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztElementString();
-        result.Length = span[0];
-        result.Bytes = ZztElementStringBytes.Read(span[1..]);
-        return result;
-    }
-
-    public static ZztElementString Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[21];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztElementString value)
-    {
-        span[0] = value.Length;
-        ZztElementStringBytes.Write(span[1..], value.Bytes);
-    }
-
-    public static void Write(Stream stream, ZztElementString value)
-    {
-        Span<byte> span = stackalloc byte[21];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 93
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztElementStringBytes : IEnumerable<byte>
-{
-    public const int Length = 20;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztElementStringBytes Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztElementStringBytes>(span)[0];
-
-    public static ZztElementStringBytes Read(Stream stream)
-    {
-        Span<ZztElementStringBytes> values = stackalloc ZztElementStringBytes[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztElementStringBytes, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztElementStringBytes value) =>
-        MemoryMarshal.Cast<byte, ZztElementStringBytes>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztElementStringBytes value)
-    {
-        Span<ZztElementStringBytes> values = stackalloc ZztElementStringBytes[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztElementStringBytes, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 96
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztPosition
-{
-    public const int Size = 2;
-
-    [FieldOffset(0)] public byte X;
-    [FieldOffset(1)] public byte Y;
-
-    public static ZztPosition Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztPosition();
-        result.X = span[0];
-        result.Y = span[1];
-        return result;
-    }
-
-    public static ZztPosition Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[2];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztPosition value)
-    {
-        span[0] = value.X;
-        span[1] = value.Y;
-    }
-
-    public static void Write(Stream stream, ZztPosition value)
-    {
-        Span<byte> span = stackalloc byte[2];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 101
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztTile
-{
-    public const int Size = 2;
-
-    [FieldOffset(0)] public byte Element;
-    [FieldOffset(1)] public byte Color;
-
-    public static ZztTile Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztTile();
-        result.Element = span[0];
-        result.Color = span[1];
-        return result;
-    }
-
-    public static ZztTile Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[2];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztTile value)
-    {
-        span[0] = value.Element;
-        span[1] = value.Color;
-    }
-
-    public static void Write(Stream stream, ZztTile value)
-    {
-        Span<byte> span = stackalloc byte[2];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 106
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztTileRle
-{
-    public const int Size = 3;
-
-    [FieldOffset(0)] public byte Count;
-    [FieldOffset(1)] public byte Element;
-    [FieldOffset(2)] public byte Color;
-
-    public static ZztTileRle Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztTileRle();
-        result.Count = span[0];
-        result.Element = span[1];
-        result.Color = span[2];
-        return result;
-    }
-
-    public static ZztTileRle Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[3];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztTileRle value)
-    {
-        span[0] = value.Count;
-        span[1] = value.Element;
-        span[2] = value.Color;
-    }
-
-    public static void Write(Stream stream, ZztTileRle value)
-    {
-        Span<byte> span = stackalloc byte[3];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 112
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztTime
-{
-    public const int Size = 4;
-
-    [FieldOffset(0)] public short Seconds;
-    [FieldOffset(2)] public short Fraction;
-
-    public static ZztTime Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztTime();
-        result.Seconds = BinaryPrimitives.ReadInt16LittleEndian(span[0..]);
-        result.Fraction = BinaryPrimitives.ReadInt16LittleEndian(span[2..]);
-        return result;
-    }
-
-    public static ZztTime Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[4];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztTime value)
-    {
-        BinaryPrimitives.WriteInt16LittleEndian(span[0..], value.Seconds);
-        BinaryPrimitives.WriteInt16LittleEndian(span[2..], value.Fraction);
-    }
-
-    public static void Write(Stream stream, ZztTime value)
-    {
-        Span<byte> span = stackalloc byte[4];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 117
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztVector
-{
-    public const int Size = 4;
-
-    [FieldOffset(0)] public short X;
-    [FieldOffset(2)] public short Y;
-
-    public static ZztVector Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztVector();
-        result.X = BinaryPrimitives.ReadInt16LittleEndian(span[0..]);
-        result.Y = BinaryPrimitives.ReadInt16LittleEndian(span[2..]);
-        return result;
-    }
-
-    public static ZztVector Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[4];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztVector value)
-    {
-        BinaryPrimitives.WriteInt16LittleEndian(span[0..], value.X);
-        BinaryPrimitives.WriteInt16LittleEndian(span[2..], value.Y);
-    }
-
-    public static void Write(Stream stream, ZztVector value)
-    {
-        Span<byte> span = stackalloc byte[4];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 122
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztWorldExtra : IEnumerable<byte>
-{
-    public const int Length = 247;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztWorldExtra Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztWorldExtra>(span)[0];
-
-    public static ZztWorldExtra Read(Stream stream)
-    {
-        Span<ZztWorldExtra> values = stackalloc ZztWorldExtra[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztWorldExtra, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztWorldExtra value) =>
-        MemoryMarshal.Cast<byte, ZztWorldExtra>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztWorldExtra value)
-    {
-        Span<ZztWorldExtra> values = stackalloc ZztWorldExtra[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztWorldExtra, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 125
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztWorldFlags : IEnumerable<ZztWorldString>
-{
-    public const int Length = 10;
-
-    private ZztWorldString _element0;
-
-    public static int Size => Length * Marshal.SizeOf<ZztWorldString>();
-
-    public Span<ZztWorldString> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<ZztWorldString> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztWorldFlags Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztWorldFlags>(span)[0];
-
-    public static ZztWorldFlags Read(Stream stream)
-    {
-        Span<ZztWorldFlags> values = stackalloc ZztWorldFlags[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztWorldFlags, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztWorldFlags value) =>
-        MemoryMarshal.Cast<byte, ZztWorldFlags>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztWorldFlags value)
-    {
-        Span<ZztWorldFlags> values = stackalloc ZztWorldFlags[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztWorldFlags, byte>(values));
-    }
-
-    public IEnumerable<ZztWorldString> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<ZztWorldString> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public ZztWorldString[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 128
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztWorldHeader
-{
-    public const int Size = 512;
-
-    [FieldOffset(0)] public short Type;
-    [FieldOffset(2)] public short BoardCount;
-    [FieldOffset(4)] public short Ammo;
-    [FieldOffset(6)] public short Gems;
-    [FieldOffset(8)] public ZztWorldKeys Keys;
-    [FieldOffset(15)] public short Health;
-    [FieldOffset(17)] public short Board;
-    [FieldOffset(19)] public short Torches;
-    [FieldOffset(21)] public short TorchCycles;
-    [FieldOffset(23)] public short EnergyCycles;
-    [FieldOffset(25)] public short Unused25;
-    [FieldOffset(27)] public short Score;
-    [FieldOffset(29)] public ZztWorldString Name;
-    [FieldOffset(50)] public ZztWorldFlags Flags;
-    [FieldOffset(260)] public ZztTime TimePassed;
-    [FieldOffset(264)] public byte Locked;
-    [FieldOffset(265)] public ZztWorldExtra Extra;
-
-    public static ZztWorldHeader Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztWorldHeader();
-        result.Type = BinaryPrimitives.ReadInt16LittleEndian(span[0..]);
-        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(span[2..]);
-        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(span[4..]);
-        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(span[6..]);
-        result.Keys = ZztWorldKeys.Read(span[8..]);
-        result.Health = BinaryPrimitives.ReadInt16LittleEndian(span[15..]);
-        result.Board = BinaryPrimitives.ReadInt16LittleEndian(span[17..]);
-        result.Torches = BinaryPrimitives.ReadInt16LittleEndian(span[19..]);
-        result.TorchCycles = BinaryPrimitives.ReadInt16LittleEndian(span[21..]);
-        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(span[23..]);
-        result.Unused25 = BinaryPrimitives.ReadInt16LittleEndian(span[25..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(span[27..]);
-        result.Name = ZztWorldString.Read(span[29..]);
-        result.Flags = ZztWorldFlags.Read(span[50..]);
-        result.TimePassed = ZztTime.Read(span[260..]);
-        result.Locked = span[264];
-        result.Extra = ZztWorldExtra.Read(span[265..]);
-        return result;
-    }
-
-    public static ZztWorldHeader Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[512];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztWorldHeader value)
-    {
-        BinaryPrimitives.WriteInt16LittleEndian(span[0..], value.Type);
-        BinaryPrimitives.WriteInt16LittleEndian(span[2..], value.BoardCount);
-        BinaryPrimitives.WriteInt16LittleEndian(span[4..], value.Ammo);
-        BinaryPrimitives.WriteInt16LittleEndian(span[6..], value.Gems);
-        ZztWorldKeys.Write(span[8..], value.Keys);
-        BinaryPrimitives.WriteInt16LittleEndian(span[15..], value.Health);
-        BinaryPrimitives.WriteInt16LittleEndian(span[17..], value.Board);
-        BinaryPrimitives.WriteInt16LittleEndian(span[19..], value.Torches);
-        BinaryPrimitives.WriteInt16LittleEndian(span[21..], value.TorchCycles);
-        BinaryPrimitives.WriteInt16LittleEndian(span[23..], value.EnergyCycles);
-        BinaryPrimitives.WriteInt16LittleEndian(span[25..], value.Unused25);
-        BinaryPrimitives.WriteInt16LittleEndian(span[27..], value.Score);
-        ZztWorldString.Write(span[29..], value.Name);
-        ZztWorldFlags.Write(span[50..], value.Flags);
-        ZztTime.Write(span[260..], value.TimePassed);
-        span[264] = value.Locked;
-        ZztWorldExtra.Write(span[265..], value.Extra);
-    }
-
-    public static void Write(Stream stream, ZztWorldHeader value)
-    {
-        Span<byte> span = stackalloc byte[512];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 148
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztWorldKeys : IEnumerable<byte>
-{
-    public const int Length = 7;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztWorldKeys Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztWorldKeys>(span)[0];
-
-    public static ZztWorldKeys Read(Stream stream)
-    {
-        Span<ZztWorldKeys> values = stackalloc ZztWorldKeys[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztWorldKeys, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztWorldKeys value) =>
-        MemoryMarshal.Cast<byte, ZztWorldKeys>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztWorldKeys value)
-    {
-        Span<ZztWorldKeys> values = stackalloc ZztWorldKeys[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztWorldKeys, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 151
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct ZztWorldString
-{
-    public const int Size = 21;
-
-    public string Text
-    {
-        get
-        {
-            var source = Bytes.AsSpan();
-            var length = Math.Min(Length, source.Length);
-            return CodePage437.Encoding.GetString(source[..length]);
-        }
-        set
-        {
-            var target = Bytes.AsSpan();
-            var length = CodePage437.Encoding.GetBytes(value, target);
-            Length = (byte)length;
-        }
-    }
-
-    [FieldOffset(0)] public byte Length;
-    [FieldOffset(1)] public ZztWorldStringBytes Bytes;
-
-    public static ZztWorldString Read(ReadOnlySpan<byte> span)
-    {
-        var result = new ZztWorldString();
-        result.Length = span[0];
-        result.Bytes = ZztWorldStringBytes.Read(span[1..]);
-        return result;
-    }
-
-    public static ZztWorldString Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[21];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, ZztWorldString value)
-    {
-        span[0] = value.Length;
-        ZztWorldStringBytes.Write(span[1..], value.Bytes);
-    }
-
-    public static void Write(Stream stream, ZztWorldString value)
-    {
-        Span<byte> span = stackalloc byte[21];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 157
-[PublicAPI]
-[InlineArray(Length)]
-public struct ZztWorldStringBytes : IEnumerable<byte>
-{
-    public const int Length = 20;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static ZztWorldStringBytes Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, ZztWorldStringBytes>(span)[0];
-
-    public static ZztWorldStringBytes Read(Stream stream)
-    {
-        Span<ZztWorldStringBytes> values = stackalloc ZztWorldStringBytes[1];
-        stream.ReadExactly(MemoryMarshal.Cast<ZztWorldStringBytes, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, ZztWorldStringBytes value) =>
-        MemoryMarshal.Cast<byte, ZztWorldStringBytes>(span)[0] = value;
-
-    public static void Write(Stream stream, ZztWorldStringBytes value)
-    {
-        Span<ZztWorldStringBytes> values = stackalloc ZztWorldStringBytes[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<ZztWorldStringBytes, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 160
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct SuperZztActor
-{
-    public const int Size = 25;
-
-    [FieldOffset(0)] public ZztPosition Position;
-    [FieldOffset(2)] public ZztVector Step;
-    [FieldOffset(6)] public short Cycle;
-    [FieldOffset(8)] public ZztActorParameters Parameters;
-    [FieldOffset(11)] public short Follower;
-    [FieldOffset(13)] public short Leader;
-    [FieldOffset(15)] public ZztTile Under;
-    [FieldOffset(17)] public int Pointer;
-    [FieldOffset(21)] public short Instruction;
-    [FieldOffset(23)] public short Length;
-
-    public static SuperZztActor Read(ReadOnlySpan<byte> span)
-    {
-        var result = new SuperZztActor();
-        result.Position = ZztPosition.Read(span[0..]);
-        result.Step = ZztVector.Read(span[2..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(span[6..]);
-        result.Parameters = ZztActorParameters.Read(span[8..]);
-        result.Follower = BinaryPrimitives.ReadInt16LittleEndian(span[11..]);
-        result.Leader = BinaryPrimitives.ReadInt16LittleEndian(span[13..]);
-        result.Under = ZztTile.Read(span[15..]);
-        result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(span[17..]);
-        result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(span[21..]);
-        result.Length = BinaryPrimitives.ReadInt16LittleEndian(span[23..]);
-        return result;
-    }
-
-    public static SuperZztActor Read(Stream stream)
-    {
-        Span<byte> span = stackalloc byte[25];
-        stream.ReadExactly(span);
-        return Read(span);
-    }
-
-    public static void Write(Span<byte> span, SuperZztActor value)
-    {
-        ZztPosition.Write(span[0..], value.Position);
-        ZztVector.Write(span[2..], value.Step);
-        BinaryPrimitives.WriteInt16LittleEndian(span[6..], value.Cycle);
-        ZztActorParameters.Write(span[8..], value.Parameters);
-        BinaryPrimitives.WriteInt16LittleEndian(span[11..], value.Follower);
-        BinaryPrimitives.WriteInt16LittleEndian(span[13..], value.Leader);
-        ZztTile.Write(span[15..], value.Under);
-        BinaryPrimitives.WriteInt32LittleEndian(span[17..], value.Pointer);
-        BinaryPrimitives.WriteInt16LittleEndian(span[21..], value.Instruction);
-        BinaryPrimitives.WriteInt16LittleEndian(span[23..], value.Length);
-    }
-
-    public static void Write(Stream stream, SuperZztActor value)
-    {
-        Span<byte> span = stackalloc byte[25];
-        Write(span, value);
-        stream.Write(span);
-    }
-}
-
-// Line 173
-[PublicAPI]
-[InlineArray(Length)]
-public struct SuperZztBoardExtra : IEnumerable<byte>
-{
-    public const int Length = 14;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static SuperZztBoardExtra Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, SuperZztBoardExtra>(span)[0];
-
-    public static SuperZztBoardExtra Read(Stream stream)
-    {
-        Span<SuperZztBoardExtra> values = stackalloc SuperZztBoardExtra[1];
-        stream.ReadExactly(MemoryMarshal.Cast<SuperZztBoardExtra, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, SuperZztBoardExtra value) =>
-        MemoryMarshal.Cast<byte, SuperZztBoardExtra>(span)[0] = value;
-
-    public static void Write(Stream stream, SuperZztBoardExtra value)
-    {
-        Span<SuperZztBoardExtra> values = stackalloc SuperZztBoardExtra[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<SuperZztBoardExtra, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 176
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct SuperZztBoardHeader
+public partial class SuperZztBoardHeader : IBoardHeader
 {
     public const int Size = 63;
 
-    [FieldOffset(0)] public short Length;
-    [FieldOffset(2)] public SuperZztBoardName Name;
+    public short DataSize { get; set; }
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[60];
 
-    public static SuperZztBoardHeader Read(ReadOnlySpan<byte> span)
+    public string Name
     {
-        var result = new SuperZztBoardHeader();
-        result.Length = BinaryPrimitives.ReadInt16LittleEndian(span[0..]);
-        result.Name = SuperZztBoardName.Read(span[2..]);
-        return result;
+        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
     public static SuperZztBoardHeader Read(Stream stream)
     {
-        Span<byte> span = stackalloc byte[63];
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, SuperZztBoardHeader value)
+    public void Write(Stream stream)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(span[0..], value.Length);
-        SuperZztBoardName.Write(span[2..], value.Name);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
     }
 
-    public static void Write(Stream stream, SuperZztBoardHeader value)
+    public static SuperZztBoardHeader Read(ReadOnlySpan<byte> bytes)
     {
-        Span<byte> span = stackalloc byte[63];
-        Write(span, value);
-        stream.Write(span);
+        var result = new SuperZztBoardHeader();
+        result.DataSize = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.NameLength = bytes[2];
+        bytes[3..63].CopyTo(result.NameBytes);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], DataSize);
+        bytes[2] = NameLength;
+        NameBytes.CopyTo(bytes[3..]);
     }
 }
 
-// Line 181
 [PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct SuperZztBoardInfo
+public partial class ZztBoardInfo : IBoardInfo
+{
+    public const int Size = 88;
+
+    public byte MaxShots { get; set; }
+    public byte DarkBit { get; set; }
+    public byte[] Exits { get; init; } = new byte[4];
+    public byte RestartOnZapBit { get; set; }
+    public byte MessageLength { get; set; }
+    public byte[] MessageBytes { get; init; } = new byte[58];
+    public Position Enter { get; set; }
+    public short TimeLimit { get; set; }
+    public byte[] Extra { get; init; } = new byte[16];
+    public short ActorCount { get; set; }
+
+    public string Message
+    {
+        get => CodePage437.Encoding.GetString(MessageBytes[..MessageLength]);
+        set => MessageLength = (byte)CodePage437.Encoding.GetBytes(value, MessageBytes);
+    }
+
+    public static ZztBoardInfo Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static ZztBoardInfo Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new ZztBoardInfo();
+        result.MaxShots = bytes[0];
+        result.DarkBit = bytes[1];
+        bytes[2..6].CopyTo(result.Exits);
+        result.RestartOnZapBit = bytes[6];
+        result.MessageLength = bytes[7];
+        bytes[8..66].CopyTo(result.MessageBytes);
+        result.Enter = Position.Read(bytes[66..]);
+        result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(bytes[68..]);
+        bytes[70..86].CopyTo(result.Extra);
+        result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[86..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = MaxShots;
+        bytes[1] = DarkBit;
+        Exits.CopyTo(bytes[2..]);
+        bytes[6] = RestartOnZapBit;
+        bytes[7] = MessageLength;
+        MessageBytes.CopyTo(bytes[8..]);
+        Enter.Write(bytes[66..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[68..], TimeLimit);
+        Extra.CopyTo(bytes[70..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[86..], ActorCount);
+    }
+}
+
+[PublicAPI]
+public partial class SuperZztBoardInfo : IBoardInfo
 {
     public const int Size = 30;
 
-    [FieldOffset(0)] public byte MaxShots;
-    [FieldOffset(1)] public ZztBoardExits Exits;
-    [FieldOffset(5)] public byte RestartOnZap;
-    [FieldOffset(6)] public ZztPosition Enter;
-    [FieldOffset(8)] public ZztVector Camera;
-    [FieldOffset(12)] public short TimeLimit;
-    [FieldOffset(14)] public SuperZztBoardExtra Extra;
-    [FieldOffset(28)] public short ActorCount;
-
-    public static SuperZztBoardInfo Read(ReadOnlySpan<byte> span)
-    {
-        var result = new SuperZztBoardInfo();
-        result.MaxShots = span[0];
-        result.Exits = ZztBoardExits.Read(span[1..]);
-        result.RestartOnZap = span[5];
-        result.Enter = ZztPosition.Read(span[6..]);
-        result.Camera = ZztVector.Read(span[8..]);
-        result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(span[12..]);
-        result.Extra = SuperZztBoardExtra.Read(span[14..]);
-        result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(span[28..]);
-        return result;
-    }
+    public byte MaxShots { get; set; }
+    public byte[] Exits { get; init; } = new byte[4];
+    public byte RestartOnZapBit { get; set; }
+    public Position Enter { get; set; }
+    public Vector Camera { get; set; }
+    public short TimeLimit { get; set; }
+    public byte[] Extra { get; init; } = new byte[14];
+    public short ActorCount { get; set; }
 
     public static SuperZztBoardInfo Read(Stream stream)
     {
-        Span<byte> span = stackalloc byte[30];
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, SuperZztBoardInfo value)
+    public void Write(Stream stream)
     {
-        span[0] = value.MaxShots;
-        ZztBoardExits.Write(span[1..], value.Exits);
-        span[5] = value.RestartOnZap;
-        ZztPosition.Write(span[6..], value.Enter);
-        ZztVector.Write(span[8..], value.Camera);
-        BinaryPrimitives.WriteInt16LittleEndian(span[12..], value.TimeLimit);
-        SuperZztBoardExtra.Write(span[14..], value.Extra);
-        BinaryPrimitives.WriteInt16LittleEndian(span[28..], value.ActorCount);
-    }
-
-    public static void Write(Stream stream, SuperZztBoardInfo value)
-    {
-        Span<byte> span = stackalloc byte[30];
-        Write(span, value);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
         stream.Write(span);
     }
-}
 
-// Line 192
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct SuperZztBoardName
-{
-    public const int Size = 61;
-
-    public string Text
+    public static SuperZztBoardInfo Read(ReadOnlySpan<byte> bytes)
     {
-        get
-        {
-            var source = Bytes.AsSpan();
-            var length = Math.Min(Length, source.Length);
-            return CodePage437.Encoding.GetString(source[..length]);
-        }
-        set
-        {
-            var target = Bytes.AsSpan();
-            var length = CodePage437.Encoding.GetBytes(value, target);
-            Length = (byte)length;
-        }
-    }
-
-    [FieldOffset(0)] public byte Length;
-    [FieldOffset(1)] public SuperZztBoardNameBytes Bytes;
-
-    public static SuperZztBoardName Read(ReadOnlySpan<byte> span)
-    {
-        var result = new SuperZztBoardName();
-        result.Length = span[0];
-        result.Bytes = SuperZztBoardNameBytes.Read(span[1..]);
+        var result = new SuperZztBoardInfo();
+        result.MaxShots = bytes[0];
+        bytes[1..5].CopyTo(result.Exits);
+        result.RestartOnZapBit = bytes[5];
+        result.Enter = Position.Read(bytes[6..]);
+        result.Camera = Vector.Read(bytes[8..]);
+        result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(bytes[12..]);
+        bytes[14..28].CopyTo(result.Extra);
+        result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[28..]);
         return result;
     }
 
-    public static SuperZztBoardName Read(Stream stream)
+    public void Write(Span<byte> bytes)
     {
-        Span<byte> span = stackalloc byte[61];
+        bytes[0] = MaxShots;
+        Exits.CopyTo(bytes[1..]);
+        bytes[5] = RestartOnZapBit;
+        Enter.Write(bytes[6..]);
+        Camera.Write(bytes[8..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[12..], TimeLimit);
+        Extra.CopyTo(bytes[14..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[28..], ActorCount);
+    }
+}
+
+[PublicAPI]
+public partial class ZztElementProperties : IElementProperties
+{
+    public const int Size = 195;
+
+    public byte Character { get; set; }
+    public byte Color { get; set; }
+    public byte DestructibleBit { get; set; }
+    public byte PushableBit { get; set; }
+    public byte AlwaysVisibleBit { get; set; }
+    public byte EditorFloorBit { get; set; }
+    public byte FloorBit { get; set; }
+    public byte DrawFuncBit { get; set; }
+    public int DrawFunc { get; set; }
+    public short Cycle { get; set; }
+    public int ActFunc { get; set; }
+    public int InteractFunc { get; set; }
+    public short Menu { get; set; }
+    public byte MenuKey { get; set; }
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[20];
+    public byte EditorCategoryTextLength { get; set; }
+    public byte[] EditorCategoryTextBytes { get; init; } = new byte[20];
+    public byte EditorP1TextLength { get; set; }
+    public byte[] EditorP1TextBytes { get; init; } = new byte[20];
+    public byte EditorP2TextLength { get; set; }
+    public byte[] EditorP2TextBytes { get; init; } = new byte[20];
+    public byte EditorP3TextLength { get; set; }
+    public byte[] EditorP3TextBytes { get; init; } = new byte[20];
+    public byte EditorBoardTextLength { get; set; }
+    public byte[] EditorBoardTextBytes { get; init; } = new byte[20];
+    public byte EditorStepTextLength { get; set; }
+    public byte[] EditorStepTextBytes { get; init; } = new byte[20];
+    public byte EditorCodeTextLength { get; set; }
+    public byte[] EditorCodeTextBytes { get; init; } = new byte[20];
+    public short Score { get; set; }
+
+    public string Name
+    {
+        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+    }
+
+    public string EditorCategoryText
+    {
+        get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..EditorCategoryTextLength]);
+        set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCategoryTextBytes);
+    }
+
+    public string EditorP1Text
+    {
+        get => CodePage437.Encoding.GetString(EditorP1TextBytes[..EditorP1TextLength]);
+        set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP1TextBytes);
+    }
+
+    public string EditorP2Text
+    {
+        get => CodePage437.Encoding.GetString(EditorP2TextBytes[..EditorP2TextLength]);
+        set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP2TextBytes);
+    }
+
+    public string EditorP3Text
+    {
+        get => CodePage437.Encoding.GetString(EditorP3TextBytes[..EditorP3TextLength]);
+        set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP3TextBytes);
+    }
+
+    public string EditorBoardText
+    {
+        get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..EditorBoardTextLength]);
+        set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorBoardTextBytes);
+    }
+
+    public string EditorStepText
+    {
+        get => CodePage437.Encoding.GetString(EditorStepTextBytes[..EditorStepTextLength]);
+        set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorStepTextBytes);
+    }
+
+    public string EditorCodeText
+    {
+        get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..EditorCodeTextLength]);
+        set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCodeTextBytes);
+    }
+
+    public static ZztElementProperties Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, SuperZztBoardName value)
+    public void Write(Stream stream)
     {
-        span[0] = value.Length;
-        SuperZztBoardNameBytes.Write(span[1..], value.Bytes);
-    }
-
-    public static void Write(Stream stream, SuperZztBoardName value)
-    {
-        Span<byte> span = stackalloc byte[61];
-        Write(span, value);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
         stream.Write(span);
     }
+
+    public static ZztElementProperties Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new ZztElementProperties();
+        result.Character = bytes[0];
+        result.Color = bytes[1];
+        result.DestructibleBit = bytes[2];
+        result.PushableBit = bytes[3];
+        result.AlwaysVisibleBit = bytes[4];
+        result.EditorFloorBit = bytes[5];
+        result.FloorBit = bytes[6];
+        result.DrawFuncBit = bytes[7];
+        result.DrawFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[8..]);
+        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[12..]);
+        result.ActFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[14..]);
+        result.InteractFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[18..]);
+        result.Menu = BinaryPrimitives.ReadInt16LittleEndian(bytes[22..]);
+        result.MenuKey = bytes[24];
+        result.NameLength = bytes[25];
+        bytes[26..46].CopyTo(result.NameBytes);
+        result.EditorCategoryTextLength = bytes[46];
+        bytes[47..67].CopyTo(result.EditorCategoryTextBytes);
+        result.EditorP1TextLength = bytes[67];
+        bytes[68..88].CopyTo(result.EditorP1TextBytes);
+        result.EditorP2TextLength = bytes[88];
+        bytes[89..109].CopyTo(result.EditorP2TextBytes);
+        result.EditorP3TextLength = bytes[109];
+        bytes[110..130].CopyTo(result.EditorP3TextBytes);
+        result.EditorBoardTextLength = bytes[130];
+        bytes[131..151].CopyTo(result.EditorBoardTextBytes);
+        result.EditorStepTextLength = bytes[151];
+        bytes[152..172].CopyTo(result.EditorStepTextBytes);
+        result.EditorCodeTextLength = bytes[172];
+        bytes[173..193].CopyTo(result.EditorCodeTextBytes);
+        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[193..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = Character;
+        bytes[1] = Color;
+        bytes[2] = DestructibleBit;
+        bytes[3] = PushableBit;
+        bytes[4] = AlwaysVisibleBit;
+        bytes[5] = EditorFloorBit;
+        bytes[6] = FloorBit;
+        bytes[7] = DrawFuncBit;
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[8..], DrawFunc);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[12..], Cycle);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[14..], ActFunc);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[18..], InteractFunc);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[22..], Menu);
+        bytes[24] = MenuKey;
+        bytes[25] = NameLength;
+        NameBytes.CopyTo(bytes[26..]);
+        bytes[46] = EditorCategoryTextLength;
+        EditorCategoryTextBytes.CopyTo(bytes[47..]);
+        bytes[67] = EditorP1TextLength;
+        EditorP1TextBytes.CopyTo(bytes[68..]);
+        bytes[88] = EditorP2TextLength;
+        EditorP2TextBytes.CopyTo(bytes[89..]);
+        bytes[109] = EditorP3TextLength;
+        EditorP3TextBytes.CopyTo(bytes[110..]);
+        bytes[130] = EditorBoardTextLength;
+        EditorBoardTextBytes.CopyTo(bytes[131..]);
+        bytes[151] = EditorStepTextLength;
+        EditorStepTextBytes.CopyTo(bytes[152..]);
+        bytes[172] = EditorCodeTextLength;
+        EditorCodeTextBytes.CopyTo(bytes[173..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[193..], Score);
+    }
 }
 
-// Line 198
 [PublicAPI]
-[InlineArray(Length)]
-public struct SuperZztBoardNameBytes : IEnumerable<byte>
-{
-    public const int Length = 60;
-
-    private byte _element0;
-
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static SuperZztBoardNameBytes Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, SuperZztBoardNameBytes>(span)[0];
-
-    public static SuperZztBoardNameBytes Read(Stream stream)
-    {
-        Span<SuperZztBoardNameBytes> values = stackalloc SuperZztBoardNameBytes[1];
-        stream.ReadExactly(MemoryMarshal.Cast<SuperZztBoardNameBytes, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, SuperZztBoardNameBytes value) =>
-        MemoryMarshal.Cast<byte, SuperZztBoardNameBytes>(span)[0] = value;
-
-    public static void Write(Stream stream, SuperZztBoardNameBytes value)
-    {
-        Span<SuperZztBoardNameBytes> values = stackalloc SuperZztBoardNameBytes[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<SuperZztBoardNameBytes, byte>(values));
-    }
-
-    public IEnumerable<byte> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 201
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct SuperZztElement
+public partial class SuperZztElementProperties : IElementProperties
 {
     public const int Size = 194;
 
-    [FieldOffset(0)] public byte Character;
-    [FieldOffset(1)] public byte Color;
-    [FieldOffset(2)] public byte IsDestructible;
-    [FieldOffset(3)] public byte IsPushable;
-    [FieldOffset(4)] public byte IsEditorFloor;
-    [FieldOffset(5)] public byte IsFloor;
-    [FieldOffset(6)] public byte HasDrawFunc;
-    [FieldOffset(7)] public int DrawFunc;
-    [FieldOffset(11)] public short Cycle;
-    [FieldOffset(13)] public int ActFunc;
-    [FieldOffset(17)] public int InteractFunc;
-    [FieldOffset(21)] public short Menu;
-    [FieldOffset(23)] public byte MenuKey;
-    [FieldOffset(24)] public ZztElementString Name;
-    [FieldOffset(45)] public ZztElementString EditorCategoryText;
-    [FieldOffset(66)] public ZztElementString EditorP1Text;
-    [FieldOffset(87)] public ZztElementString EditorP2Text;
-    [FieldOffset(108)] public ZztElementString EditorP3Text;
-    [FieldOffset(129)] public ZztElementString EditorBoardText;
-    [FieldOffset(150)] public ZztElementString EditorStepText;
-    [FieldOffset(171)] public ZztElementString EditorCodeText;
-    [FieldOffset(192)] public short Score;
+    public byte Character { get; set; }
+    public byte Color { get; set; }
+    public byte DestructibleBit { get; set; }
+    public byte PushableBit { get; set; }
+    public byte EditorFloorBit { get; set; }
+    public byte FloorBit { get; set; }
+    public byte DrawFuncBit { get; set; }
+    public int DrawFunc { get; set; }
+    public short Cycle { get; set; }
+    public int ActFunc { get; set; }
+    public int InteractFunc { get; set; }
+    public short Menu { get; set; }
+    public byte MenuKey { get; set; }
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[20];
+    public byte EditorCategoryTextLength { get; set; }
+    public byte[] EditorCategoryTextBytes { get; init; } = new byte[20];
+    public byte EditorP1TextLength { get; set; }
+    public byte[] EditorP1TextBytes { get; init; } = new byte[20];
+    public byte EditorP2TextLength { get; set; }
+    public byte[] EditorP2TextBytes { get; init; } = new byte[20];
+    public byte EditorP3TextLength { get; set; }
+    public byte[] EditorP3TextBytes { get; init; } = new byte[20];
+    public byte EditorBoardTextLength { get; set; }
+    public byte[] EditorBoardTextBytes { get; init; } = new byte[20];
+    public byte EditorStepTextLength { get; set; }
+    public byte[] EditorStepTextBytes { get; init; } = new byte[20];
+    public byte EditorCodeTextLength { get; set; }
+    public byte[] EditorCodeTextBytes { get; init; } = new byte[20];
+    public short Score { get; set; }
 
-    public static SuperZztElement Read(ReadOnlySpan<byte> span)
+    public string Name
     {
-        var result = new SuperZztElement();
-        result.Character = span[0];
-        result.Color = span[1];
-        result.IsDestructible = span[2];
-        result.IsPushable = span[3];
-        result.IsEditorFloor = span[4];
-        result.IsFloor = span[5];
-        result.HasDrawFunc = span[6];
-        result.DrawFunc = BinaryPrimitives.ReadInt32LittleEndian(span[7..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(span[11..]);
-        result.ActFunc = BinaryPrimitives.ReadInt32LittleEndian(span[13..]);
-        result.InteractFunc = BinaryPrimitives.ReadInt32LittleEndian(span[17..]);
-        result.Menu = BinaryPrimitives.ReadInt16LittleEndian(span[21..]);
-        result.MenuKey = span[23];
-        result.Name = ZztElementString.Read(span[24..]);
-        result.EditorCategoryText = ZztElementString.Read(span[45..]);
-        result.EditorP1Text = ZztElementString.Read(span[66..]);
-        result.EditorP2Text = ZztElementString.Read(span[87..]);
-        result.EditorP3Text = ZztElementString.Read(span[108..]);
-        result.EditorBoardText = ZztElementString.Read(span[129..]);
-        result.EditorStepText = ZztElementString.Read(span[150..]);
-        result.EditorCodeText = ZztElementString.Read(span[171..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(span[192..]);
-        return result;
+        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
-    public static SuperZztElement Read(Stream stream)
+    public string EditorCategoryText
     {
-        Span<byte> span = stackalloc byte[194];
+        get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..EditorCategoryTextLength]);
+        set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCategoryTextBytes);
+    }
+
+    public string EditorP1Text
+    {
+        get => CodePage437.Encoding.GetString(EditorP1TextBytes[..EditorP1TextLength]);
+        set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP1TextBytes);
+    }
+
+    public string EditorP2Text
+    {
+        get => CodePage437.Encoding.GetString(EditorP2TextBytes[..EditorP2TextLength]);
+        set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP2TextBytes);
+    }
+
+    public string EditorP3Text
+    {
+        get => CodePage437.Encoding.GetString(EditorP3TextBytes[..EditorP3TextLength]);
+        set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP3TextBytes);
+    }
+
+    public string EditorBoardText
+    {
+        get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..EditorBoardTextLength]);
+        set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorBoardTextBytes);
+    }
+
+    public string EditorStepText
+    {
+        get => CodePage437.Encoding.GetString(EditorStepTextBytes[..EditorStepTextLength]);
+        set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorStepTextBytes);
+    }
+
+    public string EditorCodeText
+    {
+        get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..EditorCodeTextLength]);
+        set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCodeTextBytes);
+    }
+
+    public static SuperZztElementProperties Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, SuperZztElement value)
+    public void Write(Stream stream)
     {
-        span[0] = value.Character;
-        span[1] = value.Color;
-        span[2] = value.IsDestructible;
-        span[3] = value.IsPushable;
-        span[4] = value.IsEditorFloor;
-        span[5] = value.IsFloor;
-        span[6] = value.HasDrawFunc;
-        BinaryPrimitives.WriteInt32LittleEndian(span[7..], value.DrawFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(span[11..], value.Cycle);
-        BinaryPrimitives.WriteInt32LittleEndian(span[13..], value.ActFunc);
-        BinaryPrimitives.WriteInt32LittleEndian(span[17..], value.InteractFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(span[21..], value.Menu);
-        span[23] = value.MenuKey;
-        ZztElementString.Write(span[24..], value.Name);
-        ZztElementString.Write(span[45..], value.EditorCategoryText);
-        ZztElementString.Write(span[66..], value.EditorP1Text);
-        ZztElementString.Write(span[87..], value.EditorP2Text);
-        ZztElementString.Write(span[108..], value.EditorP3Text);
-        ZztElementString.Write(span[129..], value.EditorBoardText);
-        ZztElementString.Write(span[150..], value.EditorStepText);
-        ZztElementString.Write(span[171..], value.EditorCodeText);
-        BinaryPrimitives.WriteInt16LittleEndian(span[192..], value.Score);
-    }
-
-    public static void Write(Stream stream, SuperZztElement value)
-    {
-        Span<byte> span = stackalloc byte[194];
-        Write(span, value);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
         stream.Write(span);
     }
+
+    public static SuperZztElementProperties Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new SuperZztElementProperties();
+        result.Character = bytes[0];
+        result.Color = bytes[1];
+        result.DestructibleBit = bytes[2];
+        result.PushableBit = bytes[3];
+        result.EditorFloorBit = bytes[4];
+        result.FloorBit = bytes[5];
+        result.DrawFuncBit = bytes[6];
+        result.DrawFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[7..]);
+        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
+        result.ActFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[13..]);
+        result.InteractFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
+        result.Menu = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.MenuKey = bytes[23];
+        result.NameLength = bytes[24];
+        bytes[25..45].CopyTo(result.NameBytes);
+        result.EditorCategoryTextLength = bytes[45];
+        bytes[46..66].CopyTo(result.EditorCategoryTextBytes);
+        result.EditorP1TextLength = bytes[66];
+        bytes[67..87].CopyTo(result.EditorP1TextBytes);
+        result.EditorP2TextLength = bytes[87];
+        bytes[88..108].CopyTo(result.EditorP2TextBytes);
+        result.EditorP3TextLength = bytes[108];
+        bytes[109..129].CopyTo(result.EditorP3TextBytes);
+        result.EditorBoardTextLength = bytes[129];
+        bytes[130..150].CopyTo(result.EditorBoardTextBytes);
+        result.EditorStepTextLength = bytes[150];
+        bytes[151..171].CopyTo(result.EditorStepTextBytes);
+        result.EditorCodeTextLength = bytes[171];
+        bytes[172..192].CopyTo(result.EditorCodeTextBytes);
+        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[192..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = Character;
+        bytes[1] = Color;
+        bytes[2] = DestructibleBit;
+        bytes[3] = PushableBit;
+        bytes[4] = EditorFloorBit;
+        bytes[5] = FloorBit;
+        bytes[6] = DrawFuncBit;
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[7..], DrawFunc);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[11..], Cycle);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[13..], ActFunc);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes[17..], InteractFunc);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Menu);
+        bytes[23] = MenuKey;
+        bytes[24] = NameLength;
+        NameBytes.CopyTo(bytes[25..]);
+        bytes[45] = EditorCategoryTextLength;
+        EditorCategoryTextBytes.CopyTo(bytes[46..]);
+        bytes[66] = EditorP1TextLength;
+        EditorP1TextBytes.CopyTo(bytes[67..]);
+        bytes[87] = EditorP2TextLength;
+        EditorP2TextBytes.CopyTo(bytes[88..]);
+        bytes[108] = EditorP3TextLength;
+        EditorP3TextBytes.CopyTo(bytes[109..]);
+        bytes[129] = EditorBoardTextLength;
+        EditorBoardTextBytes.CopyTo(bytes[130..]);
+        bytes[150] = EditorStepTextLength;
+        EditorStepTextBytes.CopyTo(bytes[151..]);
+        bytes[171] = EditorCodeTextLength;
+        EditorCodeTextBytes.CopyTo(bytes[172..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[192..], Score);
+    }
 }
 
-// Line 226
 [PublicAPI]
-[InlineArray(Length)]
-public struct SuperZztWorldExtra : IEnumerable<byte>
+public partial class ZztWorldHeader : IWorldHeader
 {
-    public const int Length = 633;
+    public const int Size = 512;
 
-    private byte _element0;
+    public short Type { get; set; }
+    public short BoardCount { get; set; }
+    public short Ammo { get; set; }
+    public short Gems { get; set; }
+    public byte[] Keys { get; init; } = new byte[7];
+    public short Health { get; set; }
+    public short Board { get; set; }
+    public short Torches { get; set; }
+    public short TorchCycles { get; set; }
+    public short EnergyCycles { get; set; }
+    public short Unused25 { get; set; }
+    public short Score { get; set; }
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[20];
+    public Flag[] Flags { get; init; } = new Flag[10];
+    public DosTime TimePassed { get; set; }
+    public byte Locked { get; set; }
+    public byte[] Extra { get; init; } = new byte[247];
 
-    public static int Size => Length * Marshal.SizeOf<byte>();
-
-    public Span<byte> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<byte> span) =>
-        AsSpan().CopyTo(span);
-
-    public static SuperZztWorldExtra Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, SuperZztWorldExtra>(span)[0];
-
-    public static SuperZztWorldExtra Read(Stream stream)
+    public string Name
     {
-        Span<SuperZztWorldExtra> values = stackalloc SuperZztWorldExtra[1];
-        stream.ReadExactly(MemoryMarshal.Cast<SuperZztWorldExtra, byte>(values));
-        return values[0];
+        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
-    public static void Write(Span<byte> span, SuperZztWorldExtra value) =>
-        MemoryMarshal.Cast<byte, SuperZztWorldExtra>(span)[0] = value;
-
-    public static void Write(Stream stream, SuperZztWorldExtra value)
+    public static ZztWorldHeader Read(Stream stream)
     {
-        Span<SuperZztWorldExtra> values = stackalloc SuperZztWorldExtra[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<SuperZztWorldExtra, byte>(values));
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
     }
 
-    public IEnumerable<byte> AsEnumerable()
+    public void Write(Stream stream)
     {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
     }
 
-    public IEnumerator<byte> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
+    public static ZztWorldHeader Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new ZztWorldHeader();
+        result.Type = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
+        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
+        bytes[8..15].CopyTo(result.Keys);
+        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
+        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
+        result.Torches = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
+        result.TorchCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        result.Unused25 = BinaryPrimitives.ReadInt16LittleEndian(bytes[25..]);
+        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[27..]);
+        result.NameLength = bytes[29];
+        bytes[30..50].CopyTo(result.NameBytes);
+        for (int i = 0, j = 0; i < 10; i++, j += 21)
+            result.Flags[i] = Flag.Read(bytes[(50 + j)..]);
+        result.TimePassed = DosTime.Read(bytes[260..]);
+        result.Locked = bytes[264];
+        bytes[265..512].CopyTo(result.Extra);
+        return result;
+    }
 
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public byte[] ToArray() =>
-        AsSpan().ToArray();
+    public void Write(Span<byte> bytes)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Type);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], BoardCount);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Ammo);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Gems);
+        Keys.CopyTo(bytes[8..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Health);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Board);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], Torches);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], TorchCycles);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], EnergyCycles);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[25..], Unused25);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[27..], Score);
+        bytes[29] = NameLength;
+        NameBytes.CopyTo(bytes[30..]);
+        for (int i = 0, j = 0; i < 10; i++, j += 21)
+            Flags[i].Write(bytes[(50 + j)..]);
+        TimePassed.Write(bytes[260..]);
+        bytes[264] = Locked;
+        Extra.CopyTo(bytes[265..]);
+    }
 }
 
-// Line 229
 [PublicAPI]
-[InlineArray(Length)]
-public struct SuperZztWorldFlags : IEnumerable<ZztWorldString>
-{
-    public const int Length = 16;
-
-    private ZztWorldString _element0;
-
-    public static int Size => Length * Marshal.SizeOf<ZztWorldString>();
-
-    public Span<ZztWorldString> AsSpan() =>
-        MemoryMarshal.CreateSpan(ref _element0, Length);
-
-    public void CopyTo(Span<ZztWorldString> span) =>
-        AsSpan().CopyTo(span);
-
-    public static SuperZztWorldFlags Read(ReadOnlySpan<byte> span) =>
-        MemoryMarshal.Cast<byte, SuperZztWorldFlags>(span)[0];
-
-    public static SuperZztWorldFlags Read(Stream stream)
-    {
-        Span<SuperZztWorldFlags> values = stackalloc SuperZztWorldFlags[1];
-        stream.ReadExactly(MemoryMarshal.Cast<SuperZztWorldFlags, byte>(values));
-        return values[0];
-    }
-
-    public static void Write(Span<byte> span, SuperZztWorldFlags value) =>
-        MemoryMarshal.Cast<byte, SuperZztWorldFlags>(span)[0] = value;
-
-    public static void Write(Stream stream, SuperZztWorldFlags value)
-    {
-        Span<SuperZztWorldFlags> values = stackalloc SuperZztWorldFlags[1];
-        values[0] = value;
-        stream.Write(MemoryMarshal.Cast<SuperZztWorldFlags, byte>(values));
-    }
-
-    public IEnumerable<ZztWorldString> AsEnumerable()
-    {
-        for (var i = 0; i < Length; i++)
-            yield return this[i];
-    }
-
-    public IEnumerator<ZztWorldString> GetEnumerator() =>
-        AsEnumerable().GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => 
-        GetEnumerator();
-
-    public ZztWorldString[] ToArray() =>
-        AsSpan().ToArray();
-}
-
-// Line 232
-[PublicAPI]
-[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
-public struct SuperZztWorldHeader
+public partial class SuperZztWorldHeader : IWorldHeader
 {
     public const int Size = 1024;
 
-    [FieldOffset(0)] public short Type;
-    [FieldOffset(2)] public short BoardCount;
-    [FieldOffset(4)] public short Ammo;
-    [FieldOffset(6)] public short Gems;
-    [FieldOffset(8)] public ZztWorldKeys Keys;
-    [FieldOffset(15)] public short Health;
-    [FieldOffset(17)] public short Board;
-    [FieldOffset(19)] public short Unused19;
-    [FieldOffset(21)] public short Score;
-    [FieldOffset(23)] public short Unused23;
-    [FieldOffset(25)] public short EnergyCycles;
-    [FieldOffset(27)] public ZztWorldString Name;
-    [FieldOffset(48)] public SuperZztWorldFlags Flags;
-    [FieldOffset(384)] public ZztTime TimePassed;
-    [FieldOffset(388)] public byte Locked;
-    [FieldOffset(389)] public short Stones;
-    [FieldOffset(391)] public SuperZztWorldExtra Extra;
+    public short Type { get; set; }
+    public short BoardCount { get; set; }
+    public short Ammo { get; set; }
+    public short Gems { get; set; }
+    public byte[] Keys { get; init; } = new byte[7];
+    public short Health { get; set; }
+    public short Board { get; set; }
+    public short Unused19 { get; set; }
+    public short Score { get; set; }
+    public short Unused23 { get; set; }
+    public short EnergyCycles { get; set; }
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[20];
+    public Flag[] Flags { get; init; } = new Flag[16];
+    public DosTime TimePassed { get; set; }
+    public byte Locked { get; set; }
+    public short Stones { get; set; }
+    public byte[] Extra { get; init; } = new byte[633];
 
-    public static SuperZztWorldHeader Read(ReadOnlySpan<byte> span)
+    public string Name
     {
-        var result = new SuperZztWorldHeader();
-        result.Type = BinaryPrimitives.ReadInt16LittleEndian(span[0..]);
-        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(span[2..]);
-        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(span[4..]);
-        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(span[6..]);
-        result.Keys = ZztWorldKeys.Read(span[8..]);
-        result.Health = BinaryPrimitives.ReadInt16LittleEndian(span[15..]);
-        result.Board = BinaryPrimitives.ReadInt16LittleEndian(span[17..]);
-        result.Unused19 = BinaryPrimitives.ReadInt16LittleEndian(span[19..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(span[21..]);
-        result.Unused23 = BinaryPrimitives.ReadInt16LittleEndian(span[23..]);
-        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(span[25..]);
-        result.Name = ZztWorldString.Read(span[27..]);
-        result.Flags = SuperZztWorldFlags.Read(span[48..]);
-        result.TimePassed = ZztTime.Read(span[384..]);
-        result.Locked = span[388];
-        result.Stones = BinaryPrimitives.ReadInt16LittleEndian(span[389..]);
-        result.Extra = SuperZztWorldExtra.Read(span[391..]);
-        return result;
+        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
     public static SuperZztWorldHeader Read(Stream stream)
     {
-        Span<byte> span = stackalloc byte[1024];
+        Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
         return Read(span);
     }
 
-    public static void Write(Span<byte> span, SuperZztWorldHeader value)
+    public void Write(Stream stream)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(span[0..], value.Type);
-        BinaryPrimitives.WriteInt16LittleEndian(span[2..], value.BoardCount);
-        BinaryPrimitives.WriteInt16LittleEndian(span[4..], value.Ammo);
-        BinaryPrimitives.WriteInt16LittleEndian(span[6..], value.Gems);
-        ZztWorldKeys.Write(span[8..], value.Keys);
-        BinaryPrimitives.WriteInt16LittleEndian(span[15..], value.Health);
-        BinaryPrimitives.WriteInt16LittleEndian(span[17..], value.Board);
-        BinaryPrimitives.WriteInt16LittleEndian(span[19..], value.Unused19);
-        BinaryPrimitives.WriteInt16LittleEndian(span[21..], value.Score);
-        BinaryPrimitives.WriteInt16LittleEndian(span[23..], value.Unused23);
-        BinaryPrimitives.WriteInt16LittleEndian(span[25..], value.EnergyCycles);
-        ZztWorldString.Write(span[27..], value.Name);
-        SuperZztWorldFlags.Write(span[48..], value.Flags);
-        ZztTime.Write(span[384..], value.TimePassed);
-        span[388] = value.Locked;
-        BinaryPrimitives.WriteInt16LittleEndian(span[389..], value.Stones);
-        SuperZztWorldExtra.Write(span[391..], value.Extra);
-    }
-
-    public static void Write(Stream stream, SuperZztWorldHeader value)
-    {
-        Span<byte> span = stackalloc byte[1024];
-        Write(span, value);
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
         stream.Write(span);
     }
+
+    public static SuperZztWorldHeader Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new SuperZztWorldHeader();
+        result.Type = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
+        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
+        bytes[8..15].CopyTo(result.Keys);
+        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
+        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
+        result.Unused19 = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
+        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.Unused23 = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[25..]);
+        result.NameLength = bytes[27];
+        bytes[28..48].CopyTo(result.NameBytes);
+        for (int i = 0, j = 0; i < 16; i++, j += 21)
+            result.Flags[i] = Flag.Read(bytes[(48 + j)..]);
+        result.TimePassed = DosTime.Read(bytes[384..]);
+        result.Locked = bytes[388];
+        result.Stones = BinaryPrimitives.ReadInt16LittleEndian(bytes[389..]);
+        bytes[391..1024].CopyTo(result.Extra);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Type);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], BoardCount);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Ammo);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Gems);
+        Keys.CopyTo(bytes[8..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Health);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Board);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], Unused19);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Score);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Unused23);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[25..], EnergyCycles);
+        bytes[27] = NameLength;
+        NameBytes.CopyTo(bytes[28..]);
+        for (int i = 0, j = 0; i < 16; i++, j += 21)
+            Flags[i].Write(bytes[(48 + j)..]);
+        TimePassed.Write(bytes[384..]);
+        bytes[388] = Locked;
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[389..], Stones);
+        Extra.CopyTo(bytes[391..]);
+    }
 }
+
+[PublicAPI]
+public partial struct Position
+{
+    public const int Size = 2;
+
+    public Position()
+    {
+    }
+
+    public byte X { get; set; }
+    public byte Y { get; set; }
+
+    public static Position Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static Position Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new Position();
+        result.X = bytes[0];
+        result.Y = bytes[1];
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = X;
+        bytes[1] = Y;
+    }
+}
+
+[PublicAPI]
+public partial struct Tile
+{
+    public const int Size = 2;
+
+    public Tile()
+    {
+    }
+
+    public byte ElementId { get; set; }
+    public byte Color { get; set; }
+
+    public static Tile Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static Tile Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new Tile();
+        result.ElementId = bytes[0];
+        result.Color = bytes[1];
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = ElementId;
+        bytes[1] = Color;
+    }
+}
+
+[PublicAPI]
+public partial struct TileRle
+{
+    public const int Size = 3;
+
+    public TileRle()
+    {
+    }
+
+    public byte Count { get; set; }
+    public byte ElementId { get; set; }
+    public byte Color { get; set; }
+
+    public static TileRle Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static TileRle Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new TileRle();
+        result.Count = bytes[0];
+        result.ElementId = bytes[1];
+        result.Color = bytes[2];
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = Count;
+        bytes[1] = ElementId;
+        bytes[2] = Color;
+    }
+}
+
+[PublicAPI]
+public partial struct DosTime
+{
+    public const int Size = 4;
+
+    public DosTime()
+    {
+    }
+
+    public short Seconds { get; set; }
+    public short Fraction { get; set; }
+
+    public static DosTime Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static DosTime Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new DosTime();
+        result.Seconds = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.Fraction = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Seconds);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Fraction);
+    }
+}
+
+[PublicAPI]
+public partial struct Vector
+{
+    public const int Size = 4;
+
+    public Vector()
+    {
+    }
+
+    public short X { get; set; }
+    public short Y { get; set; }
+
+    public static Vector Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static Vector Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new Vector();
+        result.X = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.Y = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], X);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Y);
+    }
+}
+
+[PublicAPI]
+public partial struct Flag
+{
+    public const int Size = 21;
+
+    public Flag()
+    {
+    }
+
+    public byte Length { get; set; }
+    public byte[] Bytes { get; init; } = new byte[20];
+
+    public string Text
+    {
+        get => CodePage437.Encoding.GetString(Bytes[..Length]);
+        set => Length = (byte)CodePage437.Encoding.GetBytes(value, Bytes);
+    }
+
+    public static Flag Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static Flag Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new Flag();
+        result.Length = bytes[0];
+        bytes[1..21].CopyTo(result.Bytes);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = Length;
+        Bytes.CopyTo(bytes[1..]);
+    }
+}
+
+#endregion

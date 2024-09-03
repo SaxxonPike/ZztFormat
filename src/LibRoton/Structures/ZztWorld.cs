@@ -1,51 +1,126 @@
-namespace LibRoton.Structures;
+﻿namespace LibRoton.Structures;
 
-public class ZztWorld
+public class ZztWorld : IWorld
 {
-    public ZztWorldHeader Header { get; set; }
-    public List<ZztPackedBoard> PackedBoards { get; set; }
+    public ZztWorldHeader Header { get; set; } = new();
 
-    public static ZztWorld Read(Stream stream)
-    {
-        var result = new ZztWorld
+    IWorldHeader IWorld.Header => Header;
+
+    public Element GetElement(byte elementId) =>
+        elementId switch
         {
-            Header = ZztWorldHeader.Read(stream)
+            0 => Element.Empty,
+            1 => Element.BoardEdge,
+            2 => Element.Messenger,
+            3 => Element.Monitor,
+            4 => Element.Player,
+            5 => Element.Ammo,
+            6 => Element.Torch,
+            7 => Element.Gem,
+            8 => Element.Key,
+            9 => Element.Door,
+            10 => Element.Scroll,
+            11 => Element.Passage,
+            12 => Element.Duplicator,
+            13 => Element.Bomb,
+            14 => Element.Energizer,
+            15 => Element.Star,
+            16 => Element.Clockwise,
+            17 => Element.Counter,
+            18 => Element.Bullet,
+            19 => Element.Water,
+            20 => Element.Forest,
+            21 => Element.Solid,
+            22 => Element.Normal,
+            23 => Element.Breakable,
+            24 => Element.Boulder,
+            25 => Element.SliderNs,
+            26 => Element.SliderEw,
+            27 => Element.Fake,
+            28 => Element.Invisible,
+            29 => Element.BlinkWall,
+            30 => Element.Transporter,
+            31 => Element.Line,
+            32 => Element.Ricochet,
+            33 => Element.BlinkRayH,
+            34 => Element.Bear,
+            35 => Element.Ruffian,
+            36 => Element.Object,
+            37 => Element.Slime,
+            38 => Element.Shark,
+            39 => Element.SpinningGun,
+            40 => Element.Pusher,
+            41 => Element.Lion,
+            42 => Element.Tiger,
+            43 => Element.BlinkRayV,
+            44 => Element.Head,
+            45 => Element.Segment,
+            47 => Element.BlueText,
+            48 => Element.GreenText,
+            49 => Element.CyanText,
+            50 => Element.RedText,
+            51 => Element.PurpleText,
+            52 => Element.BrownText,
+            53 => Element.BlackText,
+            _ => (Element)elementId
         };
 
-        if (result.Header.Type != -1)
-            throw new Exception("Not a ZZT world.");
-
-        for (var i = 0; i <= result.Header.BoardCount; i++)
+    public byte GetElementId(Element element) =>
+        element switch
         {
-            var packedBoard = new ZztPackedBoard
-            {
-                Header = ZztBoardHeader.Read(stream)
-            };
-
-            var boardDataSize = packedBoard.Header.Length - ZztBoardHeader.Size;
-            packedBoard.Data = new byte[boardDataSize];
-            stream.ReadExactly(packedBoard.Data);
-            result.PackedBoards.Add(packedBoard);
-        }
-
-        return result;
-    }
-
-    public static void Write(Stream stream, ZztWorld world)
-    {
-        if (world.PackedBoards.Count < 1)
-            throw new Exception("Can't write world without any boards.");
-
-        var header = world.Header;
-        header.BoardCount = (short)(world.PackedBoards.Count - 1);
-        ZztWorldHeader.Write(stream, world.Header);
-
-        foreach (var packedBoard in world.PackedBoards)
-        {
-            var boardHeader = packedBoard.Header;
-            boardHeader.Length = (short)(packedBoard.Data.Length + ZztBoardHeader.Size);
-            ZztBoardHeader.Write(stream, boardHeader);
-            stream.Write(packedBoard.Data);
-        }
-    }
+            Element.Empty => 0,
+            Element.BoardEdge => 1,
+            Element.Messenger => 2,
+            Element.Monitor => 3,
+            Element.Player => 4,
+            Element.Ammo => 5,
+            Element.Torch => 6,
+            Element.Gem => 7,
+            Element.Key => 8,
+            Element.Door => 9,
+            Element.Scroll => 10,
+            Element.Passage => 11,
+            Element.Duplicator => 12,
+            Element.Bomb => 13,
+            Element.Energizer => 14,
+            Element.Star => 15,
+            Element.Clockwise => 16,
+            Element.Counter => 17,
+            Element.Bullet => 18,
+            Element.Water => 19,
+            Element.Forest => 20,
+            Element.Solid => 21,
+            Element.Normal => 22,
+            Element.Breakable => 23,
+            Element.Boulder => 24,
+            Element.SliderNs => 25,
+            Element.SliderEw => 26,
+            Element.Fake => 27,
+            Element.Invisible => 28,
+            Element.BlinkWall => 29,
+            Element.Transporter => 30,
+            Element.Line => 31,
+            Element.Ricochet => 32,
+            Element.BlinkRayH => 33,
+            Element.Bear => 34,
+            Element.Ruffian => 35,
+            Element.Object => 36,
+            Element.Slime => 37,
+            Element.Shark => 38,
+            Element.SpinningGun => 39,
+            Element.Pusher => 40,
+            Element.Lion => 41,
+            Element.Tiger => 42,
+            Element.BlinkRayV => 43,
+            Element.Head => 44,
+            Element.Segment => 45,
+            Element.BlueText => 47,
+            Element.GreenText => 48,
+            Element.CyanText => 49,
+            Element.RedText => 50,
+            Element.PurpleText => 51,
+            Element.BrownText => 52,
+            Element.BlackText => 53,
+            _ => (byte)element
+        };
 }
