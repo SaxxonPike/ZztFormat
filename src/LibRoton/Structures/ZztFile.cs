@@ -126,7 +126,7 @@ public static class ZztFile
         Stream stream)
     {
         var boardHeader = ZztBoardHeader.Read(stream);
-        var boardDataSize = boardHeader.DataSize - ZztBoardHeader.Size;
+        var boardDataSize = boardHeader.DataSize - ZztBoardHeader.Size + 2;
         byte[]? boardBytes = default;
         try
         {
@@ -134,8 +134,8 @@ public static class ZztFile
             stream.ReadExactly(boardBytes.AsSpan(0, boardDataSize));
             using var boardDataStream = new MemoryStream(boardBytes);
 
-            var tiles = new Tile[60 * 25];
-            RleCompression.Unpack(boardDataStream, tiles, ConvertElement);
+            var tiles = new RawTile[60 * 25];
+            RleCompression.Unpack(boardDataStream, tiles);
 
             var boardInfo = ZztBoardInfo.Read(boardDataStream);
             var actorDatas = new List<ActorData>();
@@ -143,7 +143,7 @@ public static class ZztFile
             for (var i = 0; i <= boardInfo.ActorCount; i++)
             {
                 byte[] script = [];
-                var actor = ZztActor.Read(stream);
+                var actor = ZztActor.Read(boardDataStream);
                 if (actor.Length > 0)
                 {
                     script = new byte[actor.Length];
@@ -152,7 +152,7 @@ public static class ZztFile
                 actorDatas.Add(Mapper.FromZzt(actor, script));
             }
 
-            var boardData = Mapper.FromZzt(boardHeader, boardInfo);
+            var boardData = Mapper.FromZzt(boardHeader, boardInfo, tiles);
             return (Board: boardData, Actors: actorDatas);
         }
         finally

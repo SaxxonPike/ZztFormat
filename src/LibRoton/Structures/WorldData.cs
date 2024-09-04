@@ -19,35 +19,3 @@ public class WorldData
     public byte Locked { get; set; }
     public short Stones { get; set; }
 }
-
-public class BoardData
-{
-    public string Name { get; set; }
-    public byte MaxShots { get; set; }
-    public byte DarkBit { get; set; }
-    public byte[] Exits { get; init; } = new byte[4];
-    public byte RestartOnZapBit { get; set; }
-    public string Message { get; set; }
-    public RawPosition Enter { get; set; }
-    public short TimeLimit { get; set; }
-    public short ActorCount { get; set; }
-    public RawVector Camera { get; set; }
-    public int Width { get; set; }
-    public int Height { get; set; }
-    public int MaxActorCount { get; set; }
-    public RawTile[] Tiles { get; init; } = [];
-}
-
-public class ActorData
-{
-    public RawPosition Position { get; set; }
-    public RawVector Step { get; set; }
-    public short Cycle { get; set; }
-    public byte[] Parameters { get; init; } = new byte[3];
-    public short Follower { get; set; }
-    public short Leader { get; set; }
-    public RawTile Under { get; set; }
-    public short Instruction { get; set; }
-    public short Length { get; set; }
-    public byte[] Script { get; set; } = [];
-}

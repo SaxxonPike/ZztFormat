@@ -20,6 +20,13 @@ internal static class CodePage437
     });
 
     public static Encoding Encoding => _encoding.Value;
+
+    public static byte[] GetBytes(Span<char> chars)
+    {
+        var bytes = new byte[chars.Length];
+        _encoding.Value.GetBytes(chars, bytes);
+        return bytes;
+    }
 }
 
 #endregion

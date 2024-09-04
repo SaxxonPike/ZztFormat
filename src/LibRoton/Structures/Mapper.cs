@@ -79,7 +79,7 @@ internal static class Mapper
             Locked = header.Locked
         };
 
-    public static BoardData FromZzt(ZztBoardHeader header, ZztBoardInfo info) =>
+    public static BoardData FromZzt(ZztBoardHeader header, ZztBoardInfo info, RawTile[] tiles) =>
         new()
         {
             Name = header.Name,
@@ -90,7 +90,8 @@ internal static class Mapper
             Message = info.Message,
             Enter = info.Enter,
             TimeLimit = info.TimeLimit,
-            ActorCount = info.ActorCount
+            ActorCount = info.ActorCount,
+            Tiles = tiles
         };
 
     public static ActorData FromZzt(ZztActor actor, byte[] script) =>
@@ -177,7 +178,7 @@ internal static class Mapper
             Stones = header.Stones
         };
 
-    public static BoardData FromSuperZzt(SuperZztBoardHeader header, SuperZztBoardInfo info) =>
+    public static BoardData FromSuperZzt(SuperZztBoardHeader header, SuperZztBoardInfo info, RawTile[] tiles) =>
         new()
         {
             Name = header.Name,
@@ -187,7 +188,8 @@ internal static class Mapper
             Enter = info.Enter,
             TimeLimit = info.TimeLimit,
             ActorCount = info.ActorCount,
-            Camera = info.Camera
+            Camera = info.Camera,
+            Tiles = tiles
         };
 
     public static ActorData FromSuperZzt(SuperZztActor actor, byte[] script) =>
@@ -275,7 +277,7 @@ internal static class Mapper
 
     public static Board FromCommon(BoardData board, List<ActorData> actors, Func<byte, Element> convertElement)
     {
-        var (resultActors, resultScripts) = FromCommon(actors, convertElement);
+        var resultActors = FromCommon(actors, convertElement);
 
         var result = new Board
         {
@@ -289,33 +291,40 @@ internal static class Mapper
             Enter = Vec2.FromRawPosition(board.Enter),
             TimeLimit = TimeSpan.FromSeconds(board.TimeLimit),
             Camera = Vec2.FromRawVector(board.Camera),
-            Actors = resultActors,
-            Scripts = resultScripts
+            Actors = resultActors
         };
 
         return result;
     }
 
-    private static (List<Actor> Actors, List<string> Scripts) FromCommon(List<ActorData> data,
+    private static List<Actor> FromCommon(List<ActorData> data,
         Func<byte, Element> convertElement)
     {
         var actors = new List<Actor>();
-        var scripts = new List<string>();
+        var scriptMap = new Dictionary<byte[], Memory<char>>();
+
+        for (var i = 0; i < data.Count; i++)
+        {
+            if (data[i].Script is not { Length: > 0 } script)
+                continue;
+
+            if (scriptMap.ContainsKey(script))
+                continue;
+
+            var chars = new char[data[i].Script.Length];
+            CodePage437.Encoding.GetChars(script, chars);
+            scriptMap.Add(script, chars);
+        }
 
         for (var i = 0; i < data.Count; i++)
         {
             var source = data[i];
-            var scriptIndex = -1;
+            byte[] script = [];
 
-            if (source.Script is { Length: > 0 } script)
-            {
-                scriptIndex = scripts.Count;
-                scripts.Add(CodePage437.Encoding.GetString(script));
-            }
+            if (source.Length > 0)
+                script = source.Script;
             else if (source.Length < 0)
-            {
-                scriptIndex = source.Length;
-            }
+                script = data[-source.Length].Script;
 
             actors.Add(new Actor
             {
@@ -327,18 +336,13 @@ internal static class Mapper
                 Leader = source.Leader,
                 Under = Tile.FromRawTile(source.Under, convertElement),
                 Instruction = source.Instruction,
-                Script = scriptIndex
+                Script = script.Length > 0 && scriptMap.TryGetValue(script, out var scriptChars)
+                    ? scriptChars
+                    : default
             });
         }
 
-        // Handle #bind.
-        foreach (var actor in actors)
-        {
-            if (actor.Script < 0)
-                actor.Script = actors[-actor.Script].Script;
-        }
-
-        return (actors, scripts);
+        return actors;
     }
 
     public static (WorldData World, List<(BoardData Board, List<ActorData> Actors)> Boards) ToCommon(World world,
@@ -390,28 +394,33 @@ internal static class Mapper
 
     public static List<ActorData> ToCommon(List<Actor> actors, List<string> scripts, Func<Element, byte> convertElement)
     {
-        var scriptMap = new Dictionary<int, int>();
+        var scriptMap = new Dictionary<Memory<char>, int>();
         var result = new List<ActorData>();
-        var actorIndex = 0;
+        var actorIndex = -1;
+
+        foreach (var actor in actors)
+        {
+            actorIndex++;
+
+            if (actor.Script is not { Length: > 0 } script)
+                continue;
+
+            scriptMap.TryAdd(script, actorIndex);
+        }
+
+        actorIndex = 0;
 
         foreach (var actor in actors)
         {
             var length = 0;
-            var script = string.Empty;
 
-            if (actor.Script >= 0)
+            if (actor.Script.Length > 0)
             {
-                var scriptIndex = actor.Script;
-                if (scriptMap.TryGetValue(scriptIndex, out var scriptTarget))
-                {
-                    length = -scriptTarget;
-                }
+                var targetIndex = scriptMap[actor.Script];
+                if (targetIndex != actorIndex)
+                    length = -targetIndex;
                 else
-                {
-                    script = scripts[scriptIndex];
-                    length = script.Length;
-                    scriptMap[scriptIndex] = actorIndex;
-                }
+                    length = actor.Script.Length;
             }
 
             result.Add(new ActorData
@@ -425,7 +434,9 @@ internal static class Mapper
                 Under = actor.Under.ToRawTile(convertElement),
                 Instruction = (short)actor.Instruction,
                 Length = (short)length,
-                Script = !string.IsNullOrEmpty(script) ? CodePage437.Encoding.GetBytes(script) : []
+                Script = length > 0
+                    ? CodePage437.GetBytes(actor.Script.Span)
+                    : []
             });
         }
 
