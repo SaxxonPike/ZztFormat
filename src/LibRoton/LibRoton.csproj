@@ -78,8 +78,4 @@
       </Compile>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Structures2\" />
-    </ItemGroup>
-
 </Project>
