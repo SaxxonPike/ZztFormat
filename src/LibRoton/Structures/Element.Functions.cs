@@ -2,6 +2,19 @@ namespace LibRoton.Structures;
 
 public partial class Element
 {
+    public override string ToString() =>
+        string.IsNullOrEmpty(Name)
+            ? Type.ToString()
+            : Name;
+
+    public int GetEditorColor(int desiredColor) =>
+        Color switch
+        {
+            0xFE => ((Color & 0x7) << 4) | 0xF,
+            0xFF => desiredColor,
+            _ => Color,
+        };
+
     public static Element Read(Stream stream, int worldType)
     {
         return worldType switch
@@ -19,16 +32,12 @@ public partial class Element
         {
             Character = element.Character,
             Color = element.Color,
-            IsDestructible = element.DestructibleBit,
-            IsPushable = element.PushableBit,
-            IsAlwaysVisible = element.AlwaysVisibleBit,
-            IsEditorFloor = element.EditorFloorBit,
-            IsFloor = element.FloorBit,
-            HasDrawFunc = element.DrawFuncBit,
-            DrawFunc = element.DrawFunc,
+            IsDestructible = element.DestructibleBit != 0,
+            IsPushable = element.PushableBit != 0,
+            IsAlwaysVisible = element.AlwaysVisibleBit != 0,
+            IsEditorFloor = element.EditorFloorBit != 0,
+            IsFloor = element.FloorBit != 0,
             Cycle = element.Cycle,
-            ActFunc = element.ActFunc,
-            InteractFunc = element.InteractFunc,
             Menu = element.Menu,
             MenuKey = (char)element.MenuKey,
             Name = element.Name,
@@ -50,15 +59,11 @@ public partial class Element
         {
             Character = element.Character,
             Color = element.Color,
-            IsDestructible = element.DestructibleBit,
-            IsPushable = element.PushableBit,
-            IsEditorFloor = element.EditorFloorBit,
-            IsFloor = element.FloorBit,
-            HasDrawFunc = element.DrawFuncBit,
-            DrawFunc = element.DrawFunc,
+            IsDestructible = element.DestructibleBit != 0,
+            IsPushable = element.PushableBit != 0,
+            IsEditorFloor = element.EditorFloorBit != 0,
+            IsFloor = element.FloorBit != 0,
             Cycle = element.Cycle,
-            ActFunc = element.ActFunc,
-            InteractFunc = element.InteractFunc,
             Menu = element.Menu,
             MenuKey = (char)element.MenuKey,
             Name = element.Name,

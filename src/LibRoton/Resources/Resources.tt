@@ -43,7 +43,7 @@ namespace LibRoton.Resources;
     string BuildInlinedFile(string name, string fileName)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"    public static readonly byte[] {name} = new byte[]");
+        sb.AppendLine($"    public static byte[] {name} => new byte[]");
         sb.AppendLine("    {");
         sb.AppendLine(FormatBytes(IncludeInline(fileName)));
         sb.AppendLine("    };");

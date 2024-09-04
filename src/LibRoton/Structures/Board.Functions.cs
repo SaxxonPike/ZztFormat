@@ -69,11 +69,11 @@ public partial class Board
 
     private static Board ReadZztBoard(Stream stream)
     {
+        Span<RawTile> tiles = stackalloc RawTile[60 * 25];
         var header = ZztBoardHeader.Read(stream);
 
         try
         {
-            var tiles = new RawTile[60 * 25];
             Rle.Unpack(stream, tiles);
 
             var info = ZztBoardInfo.Read(stream);
@@ -110,11 +110,11 @@ public partial class Board
 
     private static Board ReadSuperZztBoard(Stream stream)
     {
+        Span<RawTile> tiles = stackalloc RawTile[96 * 80];
         var header = SuperZztBoardHeader.Read(stream);
 
         try
         {
-            var tiles = new RawTile[96 * 80];
             Rle.Unpack(stream, tiles);
 
             var info = SuperZztBoardInfo.Read(stream);
