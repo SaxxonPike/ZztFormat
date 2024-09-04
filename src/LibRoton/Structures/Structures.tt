@@ -212,7 +212,7 @@ internal static class CodePage437
 #>
 
 [PublicAPI]
-public partial <#= structKind #> <#= structName #><#= structImplSet #>
+internal partial <#= structKind #> <#= structName #><#= structImplSet #>
 {
     public const int Size = <#= structSize #>;
 

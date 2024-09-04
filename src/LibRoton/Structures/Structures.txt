@@ -1,7 +1,6 @@
 ﻿endian little
 
 class ZztActor
-implements IActorInfo
 RawPosition Position
 RawVector Step
 short Cycle
@@ -16,7 +15,6 @@ byte[8] Extra
 end
 
 class SuperZztActor
-implements IActorInfo
 RawPosition Position
 RawVector Step
 short Cycle
@@ -30,21 +28,18 @@ short Length
 end
 
 class ZztBoardHeader
-implements IBoardHeader
 byte NameLength
 byte[50] NameBytes
 string NameLength NameBytes Name
 end
 
 class SuperZztBoardHeader
-implements IBoardHeader
 byte NameLength
 byte[60] NameBytes
 string NameLength NameBytes Name
 end 
 
 class ZztBoardInfo
-implements IBoardInfo
 byte MaxShots
 byte DarkBit
 byte[4] Exits
@@ -59,7 +54,6 @@ string MessageLength MessageBytes Message
 end
 
 class SuperZztBoardInfo
-implements IBoardInfo
 byte MaxShots
 byte[4] Exits
 byte RestartOnZapBit
@@ -71,7 +65,6 @@ short ActorCount
 end
 
 class ZztElementProperties
-implements IElementInfo
 byte Character
 byte Color
 byte DestructibleBit
@@ -114,7 +107,6 @@ string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
 class SuperZztElementProperties
-implements IElementInfo
 byte Character
 byte Color
 byte DestructibleBit
@@ -156,7 +148,6 @@ string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
 class ZztWorldHeader
-implements IWorldHeader
 short BoardCount
 short Ammo
 short Gems
@@ -171,14 +162,13 @@ short Score
 byte NameLength
 byte[20] NameBytes
 Flag[10] Flags
-DosTime TimePassed
+Time TimePassed
 byte Locked
 byte[247] Extra
 string NameLength NameBytes Name
 end
 
 class SuperZztWorldHeader
-implements IWorldHeader
 short BoardCount
 short Ammo
 short Gems
@@ -192,7 +182,7 @@ short EnergyCycles
 byte NameLength
 byte[20] NameBytes
 Flag[16] Flags
-DosTime TimePassed
+Time TimePassed
 byte Locked
 short Stones
 byte[633] Extra
@@ -227,7 +217,7 @@ byte ElementId
 byte Color
 end
 
-struct DosTime
+struct Time
 short Seconds
 short Hundredths
 end

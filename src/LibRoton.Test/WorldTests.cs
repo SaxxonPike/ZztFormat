@@ -20,9 +20,9 @@ public class WorldTests
 
         var sw = new Stopwatch();
         sw.Start();
-        var world = WorldData2.Read(worldStream);
+        var world = World.Read(worldStream);
         sw.Stop();
-        
+
         TestContext.Out.WriteLine("Elapsed: {0}", sw.Elapsed);
         TestContext.Out.WriteLine("Boards: {0}", world.Boards.Count);
         foreach (var board in world.Boards)

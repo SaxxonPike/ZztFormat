@@ -1,6 +1,6 @@
 ﻿namespace LibRoton.Structures;
 
-public static class RleCompression
+internal static class Rle
 {
     public static int Unpack(Stream stream, Span<RawTile> tiles)
     {

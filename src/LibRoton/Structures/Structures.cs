@@ -34,7 +34,7 @@ internal static class CodePage437
 #region Data Types
 
 [PublicAPI]
-public partial class ZztActor : IActorInfo
+internal partial class ZztActor
 {
     public const int Size = 33;
 
@@ -98,7 +98,7 @@ public partial class ZztActor : IActorInfo
 }
 
 [PublicAPI]
-public partial class SuperZztActor : IActorInfo
+internal partial class SuperZztActor
 {
     public const int Size = 25;
 
@@ -159,7 +159,7 @@ public partial class SuperZztActor : IActorInfo
 }
 
 [PublicAPI]
-public partial class ZztBoardHeader : IBoardHeader
+internal partial class ZztBoardHeader
 {
     public const int Size = 51;
 
@@ -202,7 +202,7 @@ public partial class ZztBoardHeader : IBoardHeader
 }
 
 [PublicAPI]
-public partial class SuperZztBoardHeader : IBoardHeader
+internal partial class SuperZztBoardHeader
 {
     public const int Size = 61;
 
@@ -245,7 +245,7 @@ public partial class SuperZztBoardHeader : IBoardHeader
 }
 
 [PublicAPI]
-public partial class ZztBoardInfo : IBoardInfo
+internal partial class ZztBoardInfo
 {
     public const int Size = 88;
 
@@ -312,7 +312,7 @@ public partial class ZztBoardInfo : IBoardInfo
 }
 
 [PublicAPI]
-public partial class SuperZztBoardInfo : IBoardInfo
+internal partial class SuperZztBoardInfo
 {
     public const int Size = 30;
 
@@ -367,7 +367,7 @@ public partial class SuperZztBoardInfo : IBoardInfo
 }
 
 [PublicAPI]
-public partial class ZztElementProperties : IElementInfo
+internal partial class ZztElementProperties
 {
     public const int Size = 195;
 
@@ -539,7 +539,7 @@ public partial class ZztElementProperties : IElementInfo
 }
 
 [PublicAPI]
-public partial class SuperZztElementProperties : IElementInfo
+internal partial class SuperZztElementProperties
 {
     public const int Size = 194;
 
@@ -708,7 +708,7 @@ public partial class SuperZztElementProperties : IElementInfo
 }
 
 [PublicAPI]
-public partial class ZztWorldHeader : IWorldHeader
+internal partial class ZztWorldHeader
 {
     public const int Size = 510;
 
@@ -726,7 +726,7 @@ public partial class ZztWorldHeader : IWorldHeader
     public byte NameLength { get; set; }
     public byte[] NameBytes { get; init; } = new byte[20];
     public Flag[] Flags { get; init; } = new Flag[10];
-    public DosTime TimePassed { get; set; }
+    public Time TimePassed { get; set; }
     public byte Locked { get; set; }
     public byte[] Extra { get; init; } = new byte[247];
 
@@ -768,7 +768,7 @@ public partial class ZztWorldHeader : IWorldHeader
         bytes[28..48].CopyTo(result.NameBytes);
         for (int i = 0, j = 0; i < 10; i++, j += 21)
             result.Flags[i] = Flag.Read(bytes[(48 + j)..]);
-        result.TimePassed = DosTime.Read(bytes[258..]);
+        result.TimePassed = Time.Read(bytes[258..]);
         result.Locked = bytes[262];
         bytes[263..510].CopyTo(result.Extra);
         return result;
@@ -798,7 +798,7 @@ public partial class ZztWorldHeader : IWorldHeader
 }
 
 [PublicAPI]
-public partial class SuperZztWorldHeader : IWorldHeader
+internal partial class SuperZztWorldHeader
 {
     public const int Size = 1022;
 
@@ -815,7 +815,7 @@ public partial class SuperZztWorldHeader : IWorldHeader
     public byte NameLength { get; set; }
     public byte[] NameBytes { get; init; } = new byte[20];
     public Flag[] Flags { get; init; } = new Flag[16];
-    public DosTime TimePassed { get; set; }
+    public Time TimePassed { get; set; }
     public byte Locked { get; set; }
     public short Stones { get; set; }
     public byte[] Extra { get; init; } = new byte[633];
@@ -857,7 +857,7 @@ public partial class SuperZztWorldHeader : IWorldHeader
         bytes[26..46].CopyTo(result.NameBytes);
         for (int i = 0, j = 0; i < 16; i++, j += 21)
             result.Flags[i] = Flag.Read(bytes[(46 + j)..]);
-        result.TimePassed = DosTime.Read(bytes[382..]);
+        result.TimePassed = Time.Read(bytes[382..]);
         result.Locked = bytes[386];
         result.Stones = BinaryPrimitives.ReadInt16LittleEndian(bytes[387..]);
         bytes[389..1022].CopyTo(result.Extra);
@@ -888,7 +888,7 @@ public partial class SuperZztWorldHeader : IWorldHeader
 }
 
 [PublicAPI]
-public partial class ZztDatHeader
+internal partial class ZztDatHeader
 {
     public const int Size = 1322;
 
@@ -932,7 +932,7 @@ public partial class ZztDatHeader
 }
 
 [PublicAPI]
-public partial struct ZztDatEntry
+internal partial struct ZztDatEntry
 {
     public const int Size = 51;
 
@@ -979,7 +979,7 @@ public partial struct ZztDatEntry
 }
 
 [PublicAPI]
-public partial struct RawPosition
+internal partial struct RawPosition
 {
     public const int Size = 2;
 
@@ -1020,7 +1020,7 @@ public partial struct RawPosition
 }
 
 [PublicAPI]
-public partial struct RawTile
+internal partial struct RawTile
 {
     public const int Size = 2;
 
@@ -1061,7 +1061,7 @@ public partial struct RawTile
 }
 
 [PublicAPI]
-public partial struct TileRle
+internal partial struct TileRle
 {
     public const int Size = 3;
 
@@ -1105,18 +1105,18 @@ public partial struct TileRle
 }
 
 [PublicAPI]
-public partial struct DosTime
+internal partial struct Time
 {
     public const int Size = 4;
 
-    public DosTime()
+    public Time()
     {
     }
 
     public short Seconds { get; set; }
     public short Hundredths { get; set; }
 
-    public static DosTime Read(Stream stream)
+    public static Time Read(Stream stream)
     {
         Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
@@ -1130,9 +1130,9 @@ public partial struct DosTime
         stream.Write(span);
     }
 
-    public static DosTime Read(ReadOnlySpan<byte> bytes)
+    public static Time Read(ReadOnlySpan<byte> bytes)
     {
-        var result = new DosTime();
+        var result = new Time();
         result.Seconds = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
         result.Hundredths = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
         return result;
@@ -1146,7 +1146,7 @@ public partial struct DosTime
 }
 
 [PublicAPI]
-public partial struct RawVector
+internal partial struct RawVector
 {
     public const int Size = 4;
 
@@ -1187,7 +1187,7 @@ public partial struct RawVector
 }
 
 [PublicAPI]
-public partial struct Flag
+internal partial struct Flag
 {
     public const int Size = 21;
 
