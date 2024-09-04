@@ -1,4 +1,5 @@
-﻿using LibRoton.Structures;
+﻿using System.Diagnostics;
+using LibRoton.Structures;
 
 namespace LibRoton.Test;
 
@@ -6,9 +7,25 @@ namespace LibRoton.Test;
 public class WorldTests
 {
     [Test]
-    public void test1()
+    // Standard worlds
+    [TestCase("TOWN.ZZT")]
+    [TestCase("ENIGMA.ZZT")]
+    // Corrupt boards
+    [TestCase("BOOFX-D2.ZZT")]
+    // Super ZZT
+    [TestCase("MONSTER.SZT")]
+    public void TestWorldLoad(string fileName)
     {
-        var worldStream = File.OpenRead(Path.Combine(TestPaths.Files, "TOWN.ZZT"));
-        var world = ZztFile.ReadWorld(worldStream);
+        var worldStream = File.OpenRead(Path.Combine(TestPaths.Files, fileName));
+
+        var sw = new Stopwatch();
+        sw.Start();
+        var world = WorldData2.Read(worldStream);
+        sw.Stop();
+        
+        TestContext.Out.WriteLine("Elapsed: {0}", sw.Elapsed);
+        TestContext.Out.WriteLine("Boards: {0}", world.Boards.Count);
+        foreach (var board in world.Boards)
+            TestContext.Out.WriteLine(board.Name);
     }
 }

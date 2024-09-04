@@ -34,7 +34,7 @@ internal static class CodePage437
 #region Data Types
 
 [PublicAPI]
-public partial class ZztActor
+public partial class ZztActor : IActorInfo
 {
     public const int Size = 33;
 
@@ -98,7 +98,7 @@ public partial class ZztActor
 }
 
 [PublicAPI]
-public partial class SuperZztActor
+public partial class SuperZztActor : IActorInfo
 {
     public const int Size = 25;
 
@@ -159,11 +159,10 @@ public partial class SuperZztActor
 }
 
 [PublicAPI]
-public partial class ZztBoardHeader
+public partial class ZztBoardHeader : IBoardHeader
 {
-    public const int Size = 53;
+    public const int Size = 51;
 
-    public short DataSize { get; set; }
     public byte NameLength { get; set; }
     public byte[] NameBytes { get; init; } = new byte[50];
 
@@ -190,26 +189,23 @@ public partial class ZztBoardHeader
     public static ZztBoardHeader Read(ReadOnlySpan<byte> bytes)
     {
         var result = new ZztBoardHeader();
-        result.DataSize = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.NameLength = bytes[2];
-        bytes[3..53].CopyTo(result.NameBytes);
+        result.NameLength = bytes[0];
+        bytes[1..51].CopyTo(result.NameBytes);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], DataSize);
-        bytes[2] = NameLength;
-        NameBytes.CopyTo(bytes[3..]);
+        bytes[0] = NameLength;
+        NameBytes.CopyTo(bytes[1..]);
     }
 }
 
 [PublicAPI]
-public partial class SuperZztBoardHeader
+public partial class SuperZztBoardHeader : IBoardHeader
 {
-    public const int Size = 63;
+    public const int Size = 61;
 
-    public short DataSize { get; set; }
     public byte NameLength { get; set; }
     public byte[] NameBytes { get; init; } = new byte[60];
 
@@ -236,22 +232,20 @@ public partial class SuperZztBoardHeader
     public static SuperZztBoardHeader Read(ReadOnlySpan<byte> bytes)
     {
         var result = new SuperZztBoardHeader();
-        result.DataSize = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.NameLength = bytes[2];
-        bytes[3..63].CopyTo(result.NameBytes);
+        result.NameLength = bytes[0];
+        bytes[1..61].CopyTo(result.NameBytes);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], DataSize);
-        bytes[2] = NameLength;
-        NameBytes.CopyTo(bytes[3..]);
+        bytes[0] = NameLength;
+        NameBytes.CopyTo(bytes[1..]);
     }
 }
 
 [PublicAPI]
-public partial class ZztBoardInfo
+public partial class ZztBoardInfo : IBoardInfo
 {
     public const int Size = 88;
 
@@ -318,7 +312,7 @@ public partial class ZztBoardInfo
 }
 
 [PublicAPI]
-public partial class SuperZztBoardInfo
+public partial class SuperZztBoardInfo : IBoardInfo
 {
     public const int Size = 30;
 
@@ -373,7 +367,7 @@ public partial class SuperZztBoardInfo
 }
 
 [PublicAPI]
-public partial class ZztElementProperties
+public partial class ZztElementProperties : IElementInfo
 {
     public const int Size = 195;
 
@@ -545,7 +539,7 @@ public partial class ZztElementProperties
 }
 
 [PublicAPI]
-public partial class SuperZztElementProperties
+public partial class SuperZztElementProperties : IElementInfo
 {
     public const int Size = 194;
 
@@ -714,11 +708,10 @@ public partial class SuperZztElementProperties
 }
 
 [PublicAPI]
-public partial class ZztWorldHeader
+public partial class ZztWorldHeader : IWorldHeader
 {
-    public const int Size = 512;
+    public const int Size = 510;
 
-    public short Type { get; set; }
     public short BoardCount { get; set; }
     public short Ammo { get; set; }
     public short Gems { get; set; }
@@ -760,58 +753,55 @@ public partial class ZztWorldHeader
     public static ZztWorldHeader Read(ReadOnlySpan<byte> bytes)
     {
         var result = new ZztWorldHeader();
-        result.Type = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
-        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
-        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
-        bytes[8..15].CopyTo(result.Keys);
-        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
-        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
-        result.Torches = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
-        result.TorchCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
-        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
-        result.Unused25 = BinaryPrimitives.ReadInt16LittleEndian(bytes[25..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[27..]);
-        result.NameLength = bytes[29];
-        bytes[30..50].CopyTo(result.NameBytes);
+        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
+        bytes[6..13].CopyTo(result.Keys);
+        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
+        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
+        result.Torches = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
+        result.TorchCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
+        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.Unused25 = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[25..]);
+        result.NameLength = bytes[27];
+        bytes[28..48].CopyTo(result.NameBytes);
         for (int i = 0, j = 0; i < 10; i++, j += 21)
-            result.Flags[i] = Flag.Read(bytes[(50 + j)..]);
-        result.TimePassed = DosTime.Read(bytes[260..]);
-        result.Locked = bytes[264];
-        bytes[265..512].CopyTo(result.Extra);
+            result.Flags[i] = Flag.Read(bytes[(48 + j)..]);
+        result.TimePassed = DosTime.Read(bytes[258..]);
+        result.Locked = bytes[262];
+        bytes[263..510].CopyTo(result.Extra);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Type);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], BoardCount);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Ammo);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Gems);
-        Keys.CopyTo(bytes[8..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Health);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Board);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], Torches);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], TorchCycles);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], EnergyCycles);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[25..], Unused25);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[27..], Score);
-        bytes[29] = NameLength;
-        NameBytes.CopyTo(bytes[30..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], BoardCount);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Ammo);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Gems);
+        Keys.CopyTo(bytes[6..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Health);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Board);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Torches);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], TorchCycles);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], EnergyCycles);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Unused25);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[25..], Score);
+        bytes[27] = NameLength;
+        NameBytes.CopyTo(bytes[28..]);
         for (int i = 0, j = 0; i < 10; i++, j += 21)
-            Flags[i].Write(bytes[(50 + j)..]);
-        TimePassed.Write(bytes[260..]);
-        bytes[264] = Locked;
-        Extra.CopyTo(bytes[265..]);
+            Flags[i].Write(bytes[(48 + j)..]);
+        TimePassed.Write(bytes[258..]);
+        bytes[262] = Locked;
+        Extra.CopyTo(bytes[263..]);
     }
 }
 
 [PublicAPI]
-public partial class SuperZztWorldHeader
+public partial class SuperZztWorldHeader : IWorldHeader
 {
-    public const int Size = 1024;
+    public const int Size = 1022;
 
-    public short Type { get; set; }
     public short BoardCount { get; set; }
     public short Ammo { get; set; }
     public short Gems { get; set; }
@@ -853,49 +843,47 @@ public partial class SuperZztWorldHeader
     public static SuperZztWorldHeader Read(ReadOnlySpan<byte> bytes)
     {
         var result = new SuperZztWorldHeader();
-        result.Type = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
-        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
-        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
-        bytes[8..15].CopyTo(result.Keys);
-        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
-        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
-        result.Unused19 = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
-        result.Unused23 = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
-        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[25..]);
-        result.NameLength = bytes[27];
-        bytes[28..48].CopyTo(result.NameBytes);
+        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
+        bytes[6..13].CopyTo(result.Keys);
+        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
+        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
+        result.Unused19 = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
+        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
+        result.Unused23 = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        result.NameLength = bytes[25];
+        bytes[26..46].CopyTo(result.NameBytes);
         for (int i = 0, j = 0; i < 16; i++, j += 21)
-            result.Flags[i] = Flag.Read(bytes[(48 + j)..]);
-        result.TimePassed = DosTime.Read(bytes[384..]);
-        result.Locked = bytes[388];
-        result.Stones = BinaryPrimitives.ReadInt16LittleEndian(bytes[389..]);
-        bytes[391..1024].CopyTo(result.Extra);
+            result.Flags[i] = Flag.Read(bytes[(46 + j)..]);
+        result.TimePassed = DosTime.Read(bytes[382..]);
+        result.Locked = bytes[386];
+        result.Stones = BinaryPrimitives.ReadInt16LittleEndian(bytes[387..]);
+        bytes[389..1022].CopyTo(result.Extra);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Type);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], BoardCount);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Ammo);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Gems);
-        Keys.CopyTo(bytes[8..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Health);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Board);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], Unused19);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Score);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Unused23);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[25..], EnergyCycles);
-        bytes[27] = NameLength;
-        NameBytes.CopyTo(bytes[28..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], BoardCount);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Ammo);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Gems);
+        Keys.CopyTo(bytes[6..]);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Health);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Board);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Unused19);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], Score);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Unused23);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], EnergyCycles);
+        bytes[25] = NameLength;
+        NameBytes.CopyTo(bytes[26..]);
         for (int i = 0, j = 0; i < 16; i++, j += 21)
-            Flags[i].Write(bytes[(48 + j)..]);
-        TimePassed.Write(bytes[384..]);
-        bytes[388] = Locked;
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[389..], Stones);
-        Extra.CopyTo(bytes[391..]);
+            Flags[i].Write(bytes[(46 + j)..]);
+        TimePassed.Write(bytes[382..]);
+        bytes[386] = Locked;
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[387..], Stones);
+        Extra.CopyTo(bytes[389..]);
     }
 }
 

@@ -1,6 +1,7 @@
 ﻿endian little
 
 class ZztActor
+implements IActorInfo
 RawPosition Position
 RawVector Step
 short Cycle
@@ -15,6 +16,7 @@ byte[8] Extra
 end
 
 class SuperZztActor
+implements IActorInfo
 RawPosition Position
 RawVector Step
 short Cycle
@@ -28,20 +30,21 @@ short Length
 end
 
 class ZztBoardHeader
-short DataSize
+implements IBoardHeader
 byte NameLength
 byte[50] NameBytes
 string NameLength NameBytes Name
 end
 
 class SuperZztBoardHeader
-short DataSize
+implements IBoardHeader
 byte NameLength
 byte[60] NameBytes
 string NameLength NameBytes Name
 end 
 
 class ZztBoardInfo
+implements IBoardInfo
 byte MaxShots
 byte DarkBit
 byte[4] Exits
@@ -56,6 +59,7 @@ string MessageLength MessageBytes Message
 end
 
 class SuperZztBoardInfo
+implements IBoardInfo
 byte MaxShots
 byte[4] Exits
 byte RestartOnZapBit
@@ -67,6 +71,7 @@ short ActorCount
 end
 
 class ZztElementProperties
+implements IElementInfo
 byte Character
 byte Color
 byte DestructibleBit
@@ -109,6 +114,7 @@ string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
 class SuperZztElementProperties
+implements IElementInfo
 byte Character
 byte Color
 byte DestructibleBit
@@ -150,7 +156,7 @@ string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
 class ZztWorldHeader
-short Type
+implements IWorldHeader
 short BoardCount
 short Ammo
 short Gems
@@ -172,7 +178,7 @@ string NameLength NameBytes Name
 end
 
 class SuperZztWorldHeader
-short Type
+implements IWorldHeader
 short BoardCount
 short Ammo
 short Gems
