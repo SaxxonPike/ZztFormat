@@ -1,4 +1,4 @@
-﻿// Automatically generated from Structures.txt
+﻿// Automatically generated from Structures.txt and Structures.tt
 
 using JetBrains.Annotations;
 using System.Buffers.Binary;

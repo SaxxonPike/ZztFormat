@@ -1,0 +1,63 @@
+<#@ template language="C#" hostspecific="true" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="Microsoft.SqlServer.Server" #>
+// Automatically generated from Resources.tt
+
+using JetBrains.Annotations;
+
+namespace LibRoton.Resources;
+
+<#
+    byte[] IncludeInline(string path) => 
+        File.ReadAllBytes(Host.ResolvePath(path));
+
+    string FormatBytes(byte[] bytes)
+    {
+        var sb = new StringBuilder("        ");
+        var x = 0;
+        var line = 0;
+        var i = 0;
+
+        foreach (var b in bytes)
+        {
+            sb.Append($"0x{b:X2}");
+            if (i++ < bytes.Length)
+                sb.Append(", ");
+            x++;
+
+            if (x == 8)
+            {
+                sb.AppendLine($" // 0x{line:X4}");
+                sb.Append("        ");
+                x = 0;
+                line += 8;
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    string BuildInlinedFile(string name, string fileName)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"    public static readonly byte[] {name} = new byte[]");
+        sb.AppendLine("    {");
+        sb.AppendLine(FormatBytes(IncludeInline(fileName)));
+        sb.AppendLine("    };");
+        return sb.ToString();
+    }
+#>
+
+[PublicAPI]
+internal static class Resources
+{
+<#= BuildInlinedFile("Font", "Font14.rom") #>
+<#= BuildInlinedFile("ZztRom", "Zzt.rom") #>
+<#= BuildInlinedFile("SuperZztRom", "SuperZzt.rom") #>
+<#= BuildInlinedFile("ZztElements", "Zzt.elements") #>
+<#= BuildInlinedFile("SuperZztElements", "SuperZzt.elements") #>
+<#= BuildInlinedFile("VgaPalette", "VgaPalette.rom") #>
+}

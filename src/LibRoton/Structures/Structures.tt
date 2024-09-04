@@ -1,10 +1,8 @@
 ﻿<#@ template language="C#" hostspecific="true" #>
-<#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ import namespace="System.IO" #>
 <#@ import namespace="System.Text.RegularExpressions" #>
-<#@ import namespace="System.Linq" #>
-// Automatically generated from Structures.txt
+// Automatically generated from Structures.txt and Structures.tt
 
 using JetBrains.Annotations;
 using System.Buffers.Binary;

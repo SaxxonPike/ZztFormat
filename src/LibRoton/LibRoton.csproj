@@ -41,6 +41,28 @@
       <None Update="Structures\Structures.txt">
         <DependentUpon>Structures.tt</DependentUpon>
       </None>
+      <None Update="Resources\Resources.tt">
+        <Generator>TextTemplatingFileGenerator</Generator>
+        <LastGenOutput>Resources.cs</LastGenOutput>
+      </None>
+      <None Update="Resources\SuperZzt.elements">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Resources\SuperZzt.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Resources\VgaPalette.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Resources\Zzt.elements">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Resources\Zzt.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Resources\Font14.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
@@ -48,6 +70,11 @@
         <AutoGen>True</AutoGen>
         <DesignTime>True</DesignTime>
         <DependentUpon>Structures.tt</DependentUpon>
+      </Compile>
+      <Compile Update="Resources\Resources.cs">
+        <AutoGen>True</AutoGen>
+        <DesignTime>True</DesignTime>
+        <DependentUpon>Resources.tt</DependentUpon>
       </Compile>
     </ItemGroup>
 

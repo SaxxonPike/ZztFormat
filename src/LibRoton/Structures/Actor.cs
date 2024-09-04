@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 namespace LibRoton.Structures;
 
 [PublicAPI]
-public class Actor
+public partial class Actor
 {
     public Vec2 Position { get; set; }
     public Vec2 Step { get; set; }
@@ -15,21 +15,4 @@ public class Actor
     public int Instruction { get; set; }
     public int Length { get; set; }
     public char[] Script { get; set; } = [];
-
-    public bool IsBound => Length < 0;
-
-    public void Bind(int index)
-    {
-        Length = -index;
-        Script = [];
-    }
-
-    public void Unbind()
-    {
-        if (Length < 0)
-            return;
-
-        Length = 0;
-        Script = [];
-    }
 }

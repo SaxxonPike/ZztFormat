@@ -2,12 +2,12 @@
 
 internal static class Rle
 {
-    public static int Unpack(Stream stream, Span<RawTile> tiles)
+    public static void Unpack(Stream stream, Span<RawTile> tiles)
     {
-        var tileIndex = 0;
-
         try
         {
+            var tileIndex = 0;
+
             while (tileIndex < tiles.Length)
             {
                 var rle = TileRle.Read(stream);
@@ -25,24 +25,22 @@ internal static class Rle
                         break;
                 }
             }
-
-            return tileIndex;
         }
-        catch
+        catch (IndexOutOfRangeException)
         {
-            return tileIndex;
+            // Do nothing.
+            // Might have a corrupt board.
         }
     }
 
-    public static int Pack(Stream stream, ReadOnlySpan<RawTile> tiles)
+    public static void Pack(Stream stream, ReadOnlySpan<RawTile> tiles)
     {
-        var result = 0;
         var runData = tiles[0];
         var runCount = 0;
 
         foreach (var tile in tiles)
         {
-            if ((tile.ElementId, tile.Color) == (runData.ElementId, runData.Color))
+            if (tile == runData)
             {
                 runCount++;
                 if (runCount < byte.MaxValue)
@@ -57,7 +55,7 @@ internal static class Rle
         if (runCount > 0)
             Commit(runData.ElementId, runData.Color, runCount);
 
-        return result;
+        return;
 
         void Commit(byte elementId, byte color, int count)
         {
@@ -67,7 +65,6 @@ internal static class Rle
                 Color = color,
                 Count = unchecked((byte)count)
             }.Write(stream);
-            result++;
         }
     }
 }

@@ -28,4 +28,19 @@ public class WorldTests
         foreach (var board in world.Boards)
             TestContext.Out.WriteLine(board.Name);
     }
+
+    [Test]
+    [TestCase("TOWN.BRD", -1)]
+    public void TestBoardLoad(string fileName, int worldType)
+    {
+        var boardStream = File.OpenRead(Path.Combine(TestPaths.Files, fileName));
+
+        var sw = new Stopwatch();
+        sw.Start();
+        var board = Board.Read(boardStream, worldType);
+        sw.Stop();
+
+        TestContext.Out.WriteLine("Elapsed: {0}", sw.Elapsed);
+        TestContext.Out.WriteLine("Board: {0}", board.Name);
+    }
 }
