@@ -1,14 +1,13 @@
 ﻿endian little
 
 class ZztActor
-implements IActor
-Position Position
-Vector Step
+RawPosition Position
+RawVector Step
 short Cycle
 byte[3] Parameters
 short Follower
 short Leader
-Tile Under
+RawTile Under
 int Pointer
 short Instruction
 short Length
@@ -16,21 +15,19 @@ byte[8] Extra
 end
 
 class SuperZztActor
-implements IActor
-Position Position
-Vector Step
+RawPosition Position
+RawVector Step
 short Cycle
 byte[3] Parameters
 short Follower
 short Leader
-Tile Under
+RawTile Under
 int Pointer
 short Instruction
 short Length
 end
 
 class ZztBoardHeader
-implements IBoardHeader
 short DataSize
 byte NameLength
 byte[50] NameBytes
@@ -38,7 +35,6 @@ string NameLength NameBytes Name
 end
 
 class SuperZztBoardHeader
-implements IBoardHeader
 short DataSize
 byte NameLength
 byte[60] NameBytes
@@ -46,14 +42,13 @@ string NameLength NameBytes Name
 end 
 
 class ZztBoardInfo
-implements IBoardInfo
 byte MaxShots
 byte DarkBit
 byte[4] Exits
 byte RestartOnZapBit
 byte MessageLength
 byte[58] MessageBytes
-Position Enter
+RawPosition Enter
 short TimeLimit
 byte[16] Extra
 short ActorCount
@@ -61,19 +56,17 @@ string MessageLength MessageBytes Message
 end
 
 class SuperZztBoardInfo
-implements IBoardInfo
 byte MaxShots
 byte[4] Exits
 byte RestartOnZapBit
-Position Enter
-Vector Camera
+RawPosition Enter
+RawVector Camera
 short TimeLimit
 byte[14] Extra
 short ActorCount
 end
 
 class ZztElementProperties
-implements IElementProperties
 byte Character
 byte Color
 byte DestructibleBit
@@ -116,7 +109,6 @@ string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
 class SuperZztElementProperties
-implements IElementProperties
 byte Character
 byte Color
 byte DestructibleBit
@@ -158,7 +150,6 @@ string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
 class ZztWorldHeader
-implements IWorldHeader
 short Type
 short BoardCount
 short Ammo
@@ -181,7 +172,6 @@ string NameLength NameBytes Name
 end
 
 class SuperZztWorldHeader
-implements IWorldHeader
 short Type
 short BoardCount
 short Ammo
@@ -203,12 +193,24 @@ byte[633] Extra
 string NameLength NameBytes Name
 end
 
-struct Position
+class ZztDatHeader
+short Count
+ZztDatEntry[24] Entries
+int[24] Offsets
+end
+
+struct ZztDatEntry
+byte Length
+byte[50] Bytes
+string Length Bytes Name
+end
+
+struct RawPosition
 byte X
 byte Y
 end
 
-struct Tile
+struct RawTile
 byte ElementId
 byte Color
 end
@@ -221,10 +223,10 @@ end
 
 struct DosTime
 short Seconds
-short Fraction
+short Hundredths
 end
 
-struct Vector
+struct RawVector
 short X
 short Y
 end

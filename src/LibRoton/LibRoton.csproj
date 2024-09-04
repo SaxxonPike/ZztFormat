@@ -13,14 +13,38 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Structures.tt">
+      <Content Update="Resources\SuperZztElements.bin">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Resources\ZztElements.bin">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Resources\SuperZzt.rom">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Resources\Zzt.rom">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Resources\VgaPalette.rom">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Update="Resources\Font14.rom">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Structures\Structures.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>Structures.cs</LastGenOutput>
+      </None>
+      <None Update="Structures\Structures.txt">
+        <DependentUpon>Structures.tt</DependentUpon>
       </None>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Structures.cs">
+      <Compile Update="Structures\Structures.cs">
         <AutoGen>True</AutoGen>
         <DesignTime>True</DesignTime>
         <DependentUpon>Structures.tt</DependentUpon>
@@ -28,7 +52,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Resources\" />
+      <Folder Include="Files\" />
     </ItemGroup>
 
 </Project>

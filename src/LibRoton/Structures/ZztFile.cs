@@ -1,13 +1,11 @@
-﻿namespace LibRoton.Structures;
+﻿using System.Buffers;
 
-public class ZztWorld : IWorld
+namespace LibRoton.Structures;
+
+public static class ZztFile
 {
-    public ZztWorldHeader Header { get; set; } = new();
-
-    IWorldHeader IWorld.Header => Header;
-
-    public Element GetElement(byte elementId) =>
-        elementId switch
+    private static Element ConvertElement(byte e) =>
+        e switch
         {
             0 => Element.Empty,
             1 => Element.BoardEdge,
@@ -62,11 +60,11 @@ public class ZztWorld : IWorld
             51 => Element.PurpleText,
             52 => Element.BrownText,
             53 => Element.BlackText,
-            _ => (Element)elementId
+            _ => (Element)e
         };
 
-    public byte GetElementId(Element element) =>
-        element switch
+    private static byte ConvertElement(Element e) =>
+        e switch
         {
             Element.Empty => 0,
             Element.BoardEdge => 1,
@@ -121,6 +119,72 @@ public class ZztWorld : IWorld
             Element.PurpleText => 51,
             Element.BrownText => 52,
             Element.BlackText => 53,
-            _ => (byte)element
+            _ => (byte)e
         };
+
+    private static (BoardData Board, List<ActorData> Actors) ReadBoardInternal(
+        Stream stream)
+    {
+        var boardHeader = ZztBoardHeader.Read(stream);
+        var boardDataSize = boardHeader.DataSize - ZztBoardHeader.Size;
+        byte[]? boardBytes = default;
+        try
+        {
+            boardBytes = ArrayPool<byte>.Shared.Rent(boardDataSize);
+            stream.ReadExactly(boardBytes.AsSpan(0, boardDataSize));
+            using var boardDataStream = new MemoryStream(boardBytes);
+
+            var tiles = new Tile[60 * 25];
+            RleCompression.Unpack(boardDataStream, tiles, ConvertElement);
+
+            var boardInfo = ZztBoardInfo.Read(boardDataStream);
+            var actorDatas = new List<ActorData>();
+
+            for (var i = 0; i <= boardInfo.ActorCount; i++)
+            {
+                byte[] script = [];
+                var actor = ZztActor.Read(stream);
+                if (actor.Length > 0)
+                {
+                    script = new byte[actor.Length];
+                    boardDataStream.ReadExactly(script);
+                }
+                actorDatas.Add(Mapper.FromZzt(actor, script));
+            }
+
+            var boardData = Mapper.FromZzt(boardHeader, boardInfo);
+            return (Board: boardData, Actors: actorDatas);
+        }
+        finally
+        {
+            if (boardBytes != null)
+                ArrayPool<byte>.Shared.Return(boardBytes);
+        }
+    }
+
+    public static World ReadWorld(Stream stream)
+    {
+        var header = ZztWorldHeader.Read(stream);
+
+        var boards = Enumerable
+            .Range(0, header.BoardCount + 1)
+            .Select(_ => ReadBoardInternal(stream))
+            .ToList();
+
+        return Mapper.FromCommon(Mapper.FromZzt(header), boards, ConvertElement);
+    }
+
+    public static Board ReadBoard(Stream stream)
+    {
+        var (board, actors) = ReadBoardInternal(stream);
+        return Mapper.FromCommon(board, actors, ConvertElement);
+    }
+
+    public static void WriteWorld(Stream stream, World world)
+    {
+    }
+
+    public static void WriteBoard(Stream stream, Board board)
+    {
+    }
 }

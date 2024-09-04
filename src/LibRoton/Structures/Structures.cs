@@ -5,7 +5,6 @@ using System.Buffers.Binary;
 using System.Text;
 
 // ReSharper disable PartialTypeWithSinglePart
-// ReSharper disable once CheckNamespace
 // ReSharper disable UseObjectOrCollectionInitializer
 namespace LibRoton.Structures;
 
@@ -28,17 +27,17 @@ internal static class CodePage437
 #region Data Types
 
 [PublicAPI]
-public partial class ZztActor : IActor
+public partial class ZztActor
 {
     public const int Size = 33;
 
-    public Position Position { get; set; }
-    public Vector Step { get; set; }
+    public RawPosition Position { get; set; }
+    public RawVector Step { get; set; }
     public short Cycle { get; set; }
     public byte[] Parameters { get; init; } = new byte[3];
     public short Follower { get; set; }
     public short Leader { get; set; }
-    public Tile Under { get; set; }
+    public RawTile Under { get; set; }
     public int Pointer { get; set; }
     public short Instruction { get; set; }
     public short Length { get; set; }
@@ -61,13 +60,13 @@ public partial class ZztActor : IActor
     public static ZztActor Read(ReadOnlySpan<byte> bytes)
     {
         var result = new ZztActor();
-        result.Position = Position.Read(bytes[0..]);
-        result.Step = Vector.Read(bytes[2..]);
+        result.Position = RawPosition.Read(bytes[0..]);
+        result.Step = RawVector.Read(bytes[2..]);
         result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
         bytes[8..11].CopyTo(result.Parameters);
         result.Follower = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
         result.Leader = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
-        result.Under = Tile.Read(bytes[15..]);
+        result.Under = RawTile.Read(bytes[15..]);
         result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
         result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
         result.Length = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
@@ -92,17 +91,17 @@ public partial class ZztActor : IActor
 }
 
 [PublicAPI]
-public partial class SuperZztActor : IActor
+public partial class SuperZztActor
 {
     public const int Size = 25;
 
-    public Position Position { get; set; }
-    public Vector Step { get; set; }
+    public RawPosition Position { get; set; }
+    public RawVector Step { get; set; }
     public short Cycle { get; set; }
     public byte[] Parameters { get; init; } = new byte[3];
     public short Follower { get; set; }
     public short Leader { get; set; }
-    public Tile Under { get; set; }
+    public RawTile Under { get; set; }
     public int Pointer { get; set; }
     public short Instruction { get; set; }
     public short Length { get; set; }
@@ -124,13 +123,13 @@ public partial class SuperZztActor : IActor
     public static SuperZztActor Read(ReadOnlySpan<byte> bytes)
     {
         var result = new SuperZztActor();
-        result.Position = Position.Read(bytes[0..]);
-        result.Step = Vector.Read(bytes[2..]);
+        result.Position = RawPosition.Read(bytes[0..]);
+        result.Step = RawVector.Read(bytes[2..]);
         result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
         bytes[8..11].CopyTo(result.Parameters);
         result.Follower = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
         result.Leader = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
-        result.Under = Tile.Read(bytes[15..]);
+        result.Under = RawTile.Read(bytes[15..]);
         result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
         result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
         result.Length = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
@@ -153,7 +152,7 @@ public partial class SuperZztActor : IActor
 }
 
 [PublicAPI]
-public partial class ZztBoardHeader : IBoardHeader
+public partial class ZztBoardHeader
 {
     public const int Size = 53;
 
@@ -199,7 +198,7 @@ public partial class ZztBoardHeader : IBoardHeader
 }
 
 [PublicAPI]
-public partial class SuperZztBoardHeader : IBoardHeader
+public partial class SuperZztBoardHeader
 {
     public const int Size = 63;
 
@@ -245,7 +244,7 @@ public partial class SuperZztBoardHeader : IBoardHeader
 }
 
 [PublicAPI]
-public partial class ZztBoardInfo : IBoardInfo
+public partial class ZztBoardInfo
 {
     public const int Size = 88;
 
@@ -255,7 +254,7 @@ public partial class ZztBoardInfo : IBoardInfo
     public byte RestartOnZapBit { get; set; }
     public byte MessageLength { get; set; }
     public byte[] MessageBytes { get; init; } = new byte[58];
-    public Position Enter { get; set; }
+    public RawPosition Enter { get; set; }
     public short TimeLimit { get; set; }
     public byte[] Extra { get; init; } = new byte[16];
     public short ActorCount { get; set; }
@@ -289,7 +288,7 @@ public partial class ZztBoardInfo : IBoardInfo
         result.RestartOnZapBit = bytes[6];
         result.MessageLength = bytes[7];
         bytes[8..66].CopyTo(result.MessageBytes);
-        result.Enter = Position.Read(bytes[66..]);
+        result.Enter = RawPosition.Read(bytes[66..]);
         result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(bytes[68..]);
         bytes[70..86].CopyTo(result.Extra);
         result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[86..]);
@@ -312,15 +311,15 @@ public partial class ZztBoardInfo : IBoardInfo
 }
 
 [PublicAPI]
-public partial class SuperZztBoardInfo : IBoardInfo
+public partial class SuperZztBoardInfo
 {
     public const int Size = 30;
 
     public byte MaxShots { get; set; }
     public byte[] Exits { get; init; } = new byte[4];
     public byte RestartOnZapBit { get; set; }
-    public Position Enter { get; set; }
-    public Vector Camera { get; set; }
+    public RawPosition Enter { get; set; }
+    public RawVector Camera { get; set; }
     public short TimeLimit { get; set; }
     public byte[] Extra { get; init; } = new byte[14];
     public short ActorCount { get; set; }
@@ -345,8 +344,8 @@ public partial class SuperZztBoardInfo : IBoardInfo
         result.MaxShots = bytes[0];
         bytes[1..5].CopyTo(result.Exits);
         result.RestartOnZapBit = bytes[5];
-        result.Enter = Position.Read(bytes[6..]);
-        result.Camera = Vector.Read(bytes[8..]);
+        result.Enter = RawPosition.Read(bytes[6..]);
+        result.Camera = RawVector.Read(bytes[8..]);
         result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(bytes[12..]);
         bytes[14..28].CopyTo(result.Extra);
         result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[28..]);
@@ -367,7 +366,7 @@ public partial class SuperZztBoardInfo : IBoardInfo
 }
 
 [PublicAPI]
-public partial class ZztElementProperties : IElementProperties
+public partial class ZztElementProperties
 {
     public const int Size = 195;
 
@@ -539,7 +538,7 @@ public partial class ZztElementProperties : IElementProperties
 }
 
 [PublicAPI]
-public partial class SuperZztElementProperties : IElementProperties
+public partial class SuperZztElementProperties
 {
     public const int Size = 194;
 
@@ -708,7 +707,7 @@ public partial class SuperZztElementProperties : IElementProperties
 }
 
 [PublicAPI]
-public partial class ZztWorldHeader : IWorldHeader
+public partial class ZztWorldHeader
 {
     public const int Size = 512;
 
@@ -801,7 +800,7 @@ public partial class ZztWorldHeader : IWorldHeader
 }
 
 [PublicAPI]
-public partial class SuperZztWorldHeader : IWorldHeader
+public partial class SuperZztWorldHeader
 {
     public const int Size = 1024;
 
@@ -894,18 +893,15 @@ public partial class SuperZztWorldHeader : IWorldHeader
 }
 
 [PublicAPI]
-public partial struct Position
+public partial class ZztDatHeader
 {
-    public const int Size = 2;
+    public const int Size = 1322;
 
-    public Position()
-    {
-    }
+    public short Count { get; set; }
+    public ZztDatEntry[] Entries { get; init; } = new ZztDatEntry[24];
+    public int[] Offsets { get; init; } = new int[24];
 
-    public byte X { get; set; }
-    public byte Y { get; set; }
-
-    public static Position Read(Stream stream)
+    public static ZztDatHeader Read(Stream stream)
     {
         Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
@@ -919,9 +915,103 @@ public partial struct Position
         stream.Write(span);
     }
 
-    public static Position Read(ReadOnlySpan<byte> bytes)
+    public static ZztDatHeader Read(ReadOnlySpan<byte> bytes)
     {
-        var result = new Position();
+        var result = new ZztDatHeader();
+        result.Count = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        for (int i = 0, j = 0; i < 24; i++, j += 51)
+            result.Entries[i] = ZztDatEntry.Read(bytes[(2 + j)..]);
+        for (int i = 0, j = 0; i < 24; i++, j += 4)
+            result.Offsets[i] = BinaryPrimitives.ReadInt32LittleEndian(bytes[(1226 + j)..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Count);
+        for (int i = 0, j = 0; i < 24; i++, j += 51)
+            Entries[i].Write(bytes[(2 + j)..]);
+        for (int i = 0, j = 0; i < 24; i++, j += 4)
+            BinaryPrimitives.WriteInt32LittleEndian(bytes[(1226 + j)..], Offsets[i]);
+    }
+}
+
+[PublicAPI]
+public partial struct ZztDatEntry
+{
+    public const int Size = 51;
+
+    public ZztDatEntry()
+    {
+    }
+
+    public byte Length { get; set; }
+    public byte[] Bytes { get; init; } = new byte[50];
+
+    public string Name
+    {
+        get => CodePage437.Encoding.GetString(Bytes[..Length]);
+        set => Length = (byte)CodePage437.Encoding.GetBytes(value, Bytes);
+    }
+
+    public static ZztDatEntry Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static ZztDatEntry Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new ZztDatEntry();
+        result.Length = bytes[0];
+        bytes[1..51].CopyTo(result.Bytes);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = Length;
+        Bytes.CopyTo(bytes[1..]);
+    }
+}
+
+[PublicAPI]
+public partial struct RawPosition
+{
+    public const int Size = 2;
+
+    public RawPosition()
+    {
+    }
+
+    public byte X { get; set; }
+    public byte Y { get; set; }
+
+    public static RawPosition Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static RawPosition Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new RawPosition();
         result.X = bytes[0];
         result.Y = bytes[1];
         return result;
@@ -935,18 +1025,18 @@ public partial struct Position
 }
 
 [PublicAPI]
-public partial struct Tile
+public partial struct RawTile
 {
     public const int Size = 2;
 
-    public Tile()
+    public RawTile()
     {
     }
 
     public byte ElementId { get; set; }
     public byte Color { get; set; }
 
-    public static Tile Read(Stream stream)
+    public static RawTile Read(Stream stream)
     {
         Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
@@ -960,9 +1050,9 @@ public partial struct Tile
         stream.Write(span);
     }
 
-    public static Tile Read(ReadOnlySpan<byte> bytes)
+    public static RawTile Read(ReadOnlySpan<byte> bytes)
     {
-        var result = new Tile();
+        var result = new RawTile();
         result.ElementId = bytes[0];
         result.Color = bytes[1];
         return result;
@@ -1029,7 +1119,7 @@ public partial struct DosTime
     }
 
     public short Seconds { get; set; }
-    public short Fraction { get; set; }
+    public short Hundredths { get; set; }
 
     public static DosTime Read(Stream stream)
     {
@@ -1049,30 +1139,30 @@ public partial struct DosTime
     {
         var result = new DosTime();
         result.Seconds = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.Fraction = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        result.Hundredths = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
         BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Seconds);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Fraction);
+        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Hundredths);
     }
 }
 
 [PublicAPI]
-public partial struct Vector
+public partial struct RawVector
 {
     public const int Size = 4;
 
-    public Vector()
+    public RawVector()
     {
     }
 
     public short X { get; set; }
     public short Y { get; set; }
 
-    public static Vector Read(Stream stream)
+    public static RawVector Read(Stream stream)
     {
         Span<byte> span = stackalloc byte[Size];
         stream.ReadExactly(span);
@@ -1086,9 +1176,9 @@ public partial struct Vector
         stream.Write(span);
     }
 
-    public static Vector Read(ReadOnlySpan<byte> bytes)
+    public static RawVector Read(ReadOnlySpan<byte> bytes)
     {
-        var result = new Vector();
+        var result = new RawVector();
         result.X = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
         result.Y = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
         return result;
