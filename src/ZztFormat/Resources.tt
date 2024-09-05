@@ -8,7 +8,7 @@
 
 using JetBrains.Annotations;
 
-namespace LibRoton;
+namespace ZztFormat;
 
 <#
     byte[] IncludeInline(string path) => 

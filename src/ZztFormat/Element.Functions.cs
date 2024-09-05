@@ -20,7 +20,7 @@ public partial class Element
         {
             -1 => GetZztElement(elementId),
             -2 => GetSuperZztElement(elementId),
-            _ => throw new LibRotonException($"Unknown world type {worldType}.")
+            _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 
     public static Element? Get(int worldType, ElementType element) =>
@@ -28,7 +28,7 @@ public partial class Element
         {
             -1 => Get(-1, ElementList.UnmapZztElement(element)),
             -2 => Get(-2, ElementList.UnmapSuperZztElement(element)),
-            _ => throw new LibRotonException($"Unknown world type {worldType}.")
+            _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 
     internal static Element? GetZztElement(int elementId)
@@ -62,7 +62,7 @@ public partial class Element
         {
             -1 => ReadZztElement(stream),
             -2 => ReadSuperZztElement(stream),
-            _ => throw new LibRotonException($"Unknown world type {worldType}.")
+            _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 
     internal static Element ConvertElement(ZztElementProperties element) =>

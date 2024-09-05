@@ -7,7 +7,7 @@ public static class ElementList
         {
             WorldType.Zzt => LoadZztElements(),
             WorldType.SuperZzt => LoadSuperZztElements(),
-            _ => throw new LibRotonException(
+            _ => throw new ZztFormatException(
                 $"Unknown world type {worldType}.")
         };
 

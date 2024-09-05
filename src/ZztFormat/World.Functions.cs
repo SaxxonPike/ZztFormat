@@ -16,7 +16,7 @@ public partial class World
     /// <returns>
     /// World that was loaded from the stream.
     /// </returns>
-    /// <exception cref="LibRotonException">
+    /// <exception cref="ZztFormatException">
     /// Thrown if the world file is unrecognized or corrupt, of if there were
     /// problems writing to the stream.
     /// </exception>
@@ -32,7 +32,7 @@ public partial class World
         {
             -1 => ReadZztWorld(stream),
             -2 => ReadSuperZztWorld(stream),
-            _ => throw new LibRotonException(
+            _ => throw new ZztFormatException(
                 $"Unknown world type {type}.")
         };
     }
@@ -156,14 +156,14 @@ public partial class World
     /// <param name="world">
     /// World data to write.
     /// </param>
-    /// <exception cref="LibRotonException">
+    /// <exception cref="ZztFormatException">
     /// Thrown if there are no boards in the world data, if the world type is
     /// unrecognized, or if there were problems writing to the stream.
     /// </exception>
     public static void Write(Stream stream, World world)
     {
         if (world.Boards.Count < 1)
-            throw new LibRotonException(
+            throw new ZztFormatException(
                 "A minimum of 1 board is required.");
 
         switch (world.Type)
@@ -175,7 +175,7 @@ public partial class World
                 WriteSuperZztWorld(stream, world);
                 break;
             default:
-                throw new LibRotonException(
+                throw new ZztFormatException(
                     $"Unknown world type {world.Type}.");
         }
     }

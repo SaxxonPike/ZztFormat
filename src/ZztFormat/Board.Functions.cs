@@ -37,7 +37,7 @@ public partial class Board
         {
             WorldType.Zzt => CreateZztBoard(),
             WorldType.SuperZzt => CreateSuperZztBoard(),
-            _ => throw new LibRotonException(
+            _ => throw new ZztFormatException(
                 $"Unknown world type {worldType}.")
         };
 
@@ -111,14 +111,14 @@ public partial class Board
             {
                 WorldType.Zzt => ReadZztBoard(dataStream),
                 WorldType.SuperZzt => ReadSuperZztBoard(dataStream),
-                _ => throw new LibRotonException(
+                _ => throw new ZztFormatException(
                     $"Unknown world type {worldType}.")
             };
 
             if (board == null)
             {
                 if (options.HasFlag(ReadOptions.ThrowOnCorruptBoards))
-                    throw new LibRotonException(
+                    throw new ZztFormatException(
                         "A corrupt board was found.");
 
                 if (!options.HasFlag(ReadOptions.KeepCorruptBoards))
@@ -141,7 +141,7 @@ public partial class Board
                         WorldType.SuperZzt => boardBuf.Length >= SuperZztBoardHeader.Size
                             ? SuperZztBoardHeader.Read(boardBuf).Name
                             : string.Empty,
-                        _ => throw new LibRotonException(
+                        _ => throw new ZztFormatException(
                             $"Unknown world type {worldType}.")
                     },
                     Extra = boardBuf.AsSpan(0, size).ToArray()
@@ -296,7 +296,7 @@ public partial class Board
     public static void Write(Stream stream, WorldType worldType, Board board)
     {
         if (board.Actors.Count < 1)
-            throw new LibRotonException(
+            throw new ZztFormatException(
                 "At least 1 actor is required on a board.");
 
         switch (worldType)
@@ -308,7 +308,7 @@ public partial class Board
                 WriteSuperZztBoard(stream, board);
                 break;
             default:
-                throw new LibRotonException(
+                throw new ZztFormatException(
                     $"Unknown world type {worldType}.");
         }
     }
