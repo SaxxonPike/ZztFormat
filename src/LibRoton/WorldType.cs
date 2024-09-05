@@ -1,0 +1,8 @@
+namespace LibRoton;
+
+public enum WorldType
+{
+    Unknown = 0,
+    Zzt = -1,
+    SuperZzt = -2
+}

@@ -1,10 +1,11 @@
 using JetBrains.Annotations;
 
-namespace LibRoton.Structures;
+namespace LibRoton;
 
 [PublicAPI]
 public partial class Element
 {
+    public int Id { get; set; }
     public ElementType Type { get; set; }
     public int Character { get; set; }
     public int Color { get; set; }

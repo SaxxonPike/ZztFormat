@@ -1,4 +1,4 @@
-namespace LibRoton.Structures;
+namespace LibRoton;
 
 public partial class Actor
 {

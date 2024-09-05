@@ -1,12 +1,10 @@
 ﻿// Automatically generated from Structures.txt and Structures.tt
 
 using JetBrains.Annotations;
-using System.Buffers.Binary;
 using System.Text;
+using static System.Buffers.Binary.BinaryPrimitives;
 
-// ReSharper disable PartialTypeWithSinglePart
-// ReSharper disable UseObjectOrCollectionInitializer
-namespace LibRoton.Structures;
+namespace LibRoton;
 
 #region Utilities
 
@@ -20,13 +18,6 @@ internal static class CodePage437
     });
 
     public static Encoding Encoding => _encoding.Value;
-
-    public static byte[] GetBytes(Span<char> chars)
-    {
-        var bytes = new byte[chars.Length];
-        _encoding.Value.GetBytes(chars, bytes);
-        return bytes;
-    }
 }
 
 #endregion
@@ -69,14 +60,14 @@ internal partial class ZztActor
         var result = new ZztActor();
         result.Position = RawPosition.Read(bytes[0..]);
         result.Step = RawVector.Read(bytes[2..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
+        result.Cycle = ReadInt16LittleEndian(bytes[6..]);
         bytes[8..11].CopyTo(result.Parameters);
-        result.Follower = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
-        result.Leader = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
+        result.Follower = ReadInt16LittleEndian(bytes[11..]);
+        result.Leader = ReadInt16LittleEndian(bytes[13..]);
         result.Under = RawTile.Read(bytes[15..]);
-        result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
-        result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
-        result.Length = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        result.Pointer = ReadInt32LittleEndian(bytes[17..]);
+        result.Instruction = ReadInt16LittleEndian(bytes[21..]);
+        result.Length = ReadInt16LittleEndian(bytes[23..]);
         bytes[25..33].CopyTo(result.Extra);
         return result;
     }
@@ -85,14 +76,14 @@ internal partial class ZztActor
     {
         Position.Write(bytes[0..]);
         Step.Write(bytes[2..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Cycle);
+        WriteInt16LittleEndian(bytes[6..], Cycle);
         Parameters.CopyTo(bytes[8..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[11..], Follower);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Leader);
+        WriteInt16LittleEndian(bytes[11..], Follower);
+        WriteInt16LittleEndian(bytes[13..], Leader);
         Under.Write(bytes[15..]);
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[17..], Pointer);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Instruction);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Length);
+        WriteInt32LittleEndian(bytes[17..], Pointer);
+        WriteInt16LittleEndian(bytes[21..], Instruction);
+        WriteInt16LittleEndian(bytes[23..], Length);
         Extra.CopyTo(bytes[25..]);
     }
 }
@@ -132,14 +123,14 @@ internal partial class SuperZztActor
         var result = new SuperZztActor();
         result.Position = RawPosition.Read(bytes[0..]);
         result.Step = RawVector.Read(bytes[2..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[6..]);
+        result.Cycle = ReadInt16LittleEndian(bytes[6..]);
         bytes[8..11].CopyTo(result.Parameters);
-        result.Follower = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
-        result.Leader = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
+        result.Follower = ReadInt16LittleEndian(bytes[11..]);
+        result.Leader = ReadInt16LittleEndian(bytes[13..]);
         result.Under = RawTile.Read(bytes[15..]);
-        result.Pointer = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
-        result.Instruction = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
-        result.Length = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        result.Pointer = ReadInt32LittleEndian(bytes[17..]);
+        result.Instruction = ReadInt16LittleEndian(bytes[21..]);
+        result.Length = ReadInt16LittleEndian(bytes[23..]);
         return result;
     }
 
@@ -147,14 +138,14 @@ internal partial class SuperZztActor
     {
         Position.Write(bytes[0..]);
         Step.Write(bytes[2..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[6..], Cycle);
+        WriteInt16LittleEndian(bytes[6..], Cycle);
         Parameters.CopyTo(bytes[8..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[11..], Follower);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Leader);
+        WriteInt16LittleEndian(bytes[11..], Follower);
+        WriteInt16LittleEndian(bytes[13..], Leader);
         Under.Write(bytes[15..]);
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[17..], Pointer);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Instruction);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Length);
+        WriteInt32LittleEndian(bytes[17..], Pointer);
+        WriteInt16LittleEndian(bytes[21..], Instruction);
+        WriteInt16LittleEndian(bytes[23..], Length);
     }
 }
 
@@ -168,7 +159,7 @@ internal partial class ZztBoardHeader
 
     public string Name
     {
-        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)50)]);
         set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
@@ -211,7 +202,7 @@ internal partial class SuperZztBoardHeader
 
     public string Name
     {
-        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)60)]);
         set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
@@ -262,7 +253,7 @@ internal partial class ZztBoardInfo
 
     public string Message
     {
-        get => CodePage437.Encoding.GetString(MessageBytes[..MessageLength]);
+        get => CodePage437.Encoding.GetString(MessageBytes[..Math.Min(MessageLength, (byte)58)]);
         set => MessageLength = (byte)CodePage437.Encoding.GetBytes(value, MessageBytes);
     }
 
@@ -290,9 +281,9 @@ internal partial class ZztBoardInfo
         result.MessageLength = bytes[7];
         bytes[8..66].CopyTo(result.MessageBytes);
         result.Enter = RawPosition.Read(bytes[66..]);
-        result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(bytes[68..]);
+        result.TimeLimit = ReadInt16LittleEndian(bytes[68..]);
         bytes[70..86].CopyTo(result.Extra);
-        result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[86..]);
+        result.ActorCount = ReadInt16LittleEndian(bytes[86..]);
         return result;
     }
 
@@ -305,9 +296,9 @@ internal partial class ZztBoardInfo
         bytes[7] = MessageLength;
         MessageBytes.CopyTo(bytes[8..]);
         Enter.Write(bytes[66..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[68..], TimeLimit);
+        WriteInt16LittleEndian(bytes[68..], TimeLimit);
         Extra.CopyTo(bytes[70..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[86..], ActorCount);
+        WriteInt16LittleEndian(bytes[86..], ActorCount);
     }
 }
 
@@ -347,9 +338,9 @@ internal partial class SuperZztBoardInfo
         result.RestartOnZapBit = bytes[5];
         result.Enter = RawPosition.Read(bytes[6..]);
         result.Camera = RawVector.Read(bytes[8..]);
-        result.TimeLimit = BinaryPrimitives.ReadInt16LittleEndian(bytes[12..]);
+        result.TimeLimit = ReadInt16LittleEndian(bytes[12..]);
         bytes[14..28].CopyTo(result.Extra);
-        result.ActorCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[28..]);
+        result.ActorCount = ReadInt16LittleEndian(bytes[28..]);
         return result;
     }
 
@@ -360,9 +351,9 @@ internal partial class SuperZztBoardInfo
         bytes[5] = RestartOnZapBit;
         Enter.Write(bytes[6..]);
         Camera.Write(bytes[8..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[12..], TimeLimit);
+        WriteInt16LittleEndian(bytes[12..], TimeLimit);
         Extra.CopyTo(bytes[14..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[28..], ActorCount);
+        WriteInt16LittleEndian(bytes[28..], ActorCount);
     }
 }
 
@@ -405,49 +396,49 @@ internal partial class ZztElementProperties
 
     public string Name
     {
-        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
         set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
     public string EditorCategoryText
     {
-        get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..EditorCategoryTextLength]);
+        get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..Math.Min(EditorCategoryTextLength, (byte)20)]);
         set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCategoryTextBytes);
     }
 
     public string EditorP1Text
     {
-        get => CodePage437.Encoding.GetString(EditorP1TextBytes[..EditorP1TextLength]);
+        get => CodePage437.Encoding.GetString(EditorP1TextBytes[..Math.Min(EditorP1TextLength, (byte)20)]);
         set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP1TextBytes);
     }
 
     public string EditorP2Text
     {
-        get => CodePage437.Encoding.GetString(EditorP2TextBytes[..EditorP2TextLength]);
+        get => CodePage437.Encoding.GetString(EditorP2TextBytes[..Math.Min(EditorP2TextLength, (byte)20)]);
         set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP2TextBytes);
     }
 
     public string EditorP3Text
     {
-        get => CodePage437.Encoding.GetString(EditorP3TextBytes[..EditorP3TextLength]);
+        get => CodePage437.Encoding.GetString(EditorP3TextBytes[..Math.Min(EditorP3TextLength, (byte)20)]);
         set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP3TextBytes);
     }
 
     public string EditorBoardText
     {
-        get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..EditorBoardTextLength]);
+        get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..Math.Min(EditorBoardTextLength, (byte)20)]);
         set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorBoardTextBytes);
     }
 
     public string EditorStepText
     {
-        get => CodePage437.Encoding.GetString(EditorStepTextBytes[..EditorStepTextLength]);
+        get => CodePage437.Encoding.GetString(EditorStepTextBytes[..Math.Min(EditorStepTextLength, (byte)20)]);
         set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorStepTextBytes);
     }
 
     public string EditorCodeText
     {
-        get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..EditorCodeTextLength]);
+        get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..Math.Min(EditorCodeTextLength, (byte)20)]);
         set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCodeTextBytes);
     }
 
@@ -476,11 +467,11 @@ internal partial class ZztElementProperties
         result.EditorFloorBit = bytes[5];
         result.FloorBit = bytes[6];
         result.DrawFuncBit = bytes[7];
-        result.DrawFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[8..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[12..]);
-        result.ActFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[14..]);
-        result.InteractFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[18..]);
-        result.Menu = BinaryPrimitives.ReadInt16LittleEndian(bytes[22..]);
+        result.DrawFunc = ReadInt32LittleEndian(bytes[8..]);
+        result.Cycle = ReadInt16LittleEndian(bytes[12..]);
+        result.ActFunc = ReadInt32LittleEndian(bytes[14..]);
+        result.InteractFunc = ReadInt32LittleEndian(bytes[18..]);
+        result.Menu = ReadInt16LittleEndian(bytes[22..]);
         result.MenuKey = bytes[24];
         result.NameLength = bytes[25];
         bytes[26..46].CopyTo(result.NameBytes);
@@ -498,7 +489,7 @@ internal partial class ZztElementProperties
         bytes[152..172].CopyTo(result.EditorStepTextBytes);
         result.EditorCodeTextLength = bytes[172];
         bytes[173..193].CopyTo(result.EditorCodeTextBytes);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[193..]);
+        result.Score = ReadInt16LittleEndian(bytes[193..]);
         return result;
     }
 
@@ -512,11 +503,11 @@ internal partial class ZztElementProperties
         bytes[5] = EditorFloorBit;
         bytes[6] = FloorBit;
         bytes[7] = DrawFuncBit;
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[8..], DrawFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[12..], Cycle);
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[14..], ActFunc);
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[18..], InteractFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[22..], Menu);
+        WriteInt32LittleEndian(bytes[8..], DrawFunc);
+        WriteInt16LittleEndian(bytes[12..], Cycle);
+        WriteInt32LittleEndian(bytes[14..], ActFunc);
+        WriteInt32LittleEndian(bytes[18..], InteractFunc);
+        WriteInt16LittleEndian(bytes[22..], Menu);
         bytes[24] = MenuKey;
         bytes[25] = NameLength;
         NameBytes.CopyTo(bytes[26..]);
@@ -534,7 +525,7 @@ internal partial class ZztElementProperties
         EditorStepTextBytes.CopyTo(bytes[152..]);
         bytes[172] = EditorCodeTextLength;
         EditorCodeTextBytes.CopyTo(bytes[173..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[193..], Score);
+        WriteInt16LittleEndian(bytes[193..], Score);
     }
 }
 
@@ -576,49 +567,49 @@ internal partial class SuperZztElementProperties
 
     public string Name
     {
-        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
         set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
     public string EditorCategoryText
     {
-        get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..EditorCategoryTextLength]);
+        get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..Math.Min(EditorCategoryTextLength, (byte)20)]);
         set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCategoryTextBytes);
     }
 
     public string EditorP1Text
     {
-        get => CodePage437.Encoding.GetString(EditorP1TextBytes[..EditorP1TextLength]);
+        get => CodePage437.Encoding.GetString(EditorP1TextBytes[..Math.Min(EditorP1TextLength, (byte)20)]);
         set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP1TextBytes);
     }
 
     public string EditorP2Text
     {
-        get => CodePage437.Encoding.GetString(EditorP2TextBytes[..EditorP2TextLength]);
+        get => CodePage437.Encoding.GetString(EditorP2TextBytes[..Math.Min(EditorP2TextLength, (byte)20)]);
         set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP2TextBytes);
     }
 
     public string EditorP3Text
     {
-        get => CodePage437.Encoding.GetString(EditorP3TextBytes[..EditorP3TextLength]);
+        get => CodePage437.Encoding.GetString(EditorP3TextBytes[..Math.Min(EditorP3TextLength, (byte)20)]);
         set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP3TextBytes);
     }
 
     public string EditorBoardText
     {
-        get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..EditorBoardTextLength]);
+        get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..Math.Min(EditorBoardTextLength, (byte)20)]);
         set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorBoardTextBytes);
     }
 
     public string EditorStepText
     {
-        get => CodePage437.Encoding.GetString(EditorStepTextBytes[..EditorStepTextLength]);
+        get => CodePage437.Encoding.GetString(EditorStepTextBytes[..Math.Min(EditorStepTextLength, (byte)20)]);
         set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorStepTextBytes);
     }
 
     public string EditorCodeText
     {
-        get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..EditorCodeTextLength]);
+        get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..Math.Min(EditorCodeTextLength, (byte)20)]);
         set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCodeTextBytes);
     }
 
@@ -646,11 +637,11 @@ internal partial class SuperZztElementProperties
         result.EditorFloorBit = bytes[4];
         result.FloorBit = bytes[5];
         result.DrawFuncBit = bytes[6];
-        result.DrawFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[7..]);
-        result.Cycle = BinaryPrimitives.ReadInt16LittleEndian(bytes[11..]);
-        result.ActFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[13..]);
-        result.InteractFunc = BinaryPrimitives.ReadInt32LittleEndian(bytes[17..]);
-        result.Menu = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
+        result.DrawFunc = ReadInt32LittleEndian(bytes[7..]);
+        result.Cycle = ReadInt16LittleEndian(bytes[11..]);
+        result.ActFunc = ReadInt32LittleEndian(bytes[13..]);
+        result.InteractFunc = ReadInt32LittleEndian(bytes[17..]);
+        result.Menu = ReadInt16LittleEndian(bytes[21..]);
         result.MenuKey = bytes[23];
         result.NameLength = bytes[24];
         bytes[25..45].CopyTo(result.NameBytes);
@@ -668,7 +659,7 @@ internal partial class SuperZztElementProperties
         bytes[151..171].CopyTo(result.EditorStepTextBytes);
         result.EditorCodeTextLength = bytes[171];
         bytes[172..192].CopyTo(result.EditorCodeTextBytes);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[192..]);
+        result.Score = ReadInt16LittleEndian(bytes[192..]);
         return result;
     }
 
@@ -681,11 +672,11 @@ internal partial class SuperZztElementProperties
         bytes[4] = EditorFloorBit;
         bytes[5] = FloorBit;
         bytes[6] = DrawFuncBit;
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[7..], DrawFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[11..], Cycle);
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[13..], ActFunc);
-        BinaryPrimitives.WriteInt32LittleEndian(bytes[17..], InteractFunc);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Menu);
+        WriteInt32LittleEndian(bytes[7..], DrawFunc);
+        WriteInt16LittleEndian(bytes[11..], Cycle);
+        WriteInt32LittleEndian(bytes[13..], ActFunc);
+        WriteInt32LittleEndian(bytes[17..], InteractFunc);
+        WriteInt16LittleEndian(bytes[21..], Menu);
         bytes[23] = MenuKey;
         bytes[24] = NameLength;
         NameBytes.CopyTo(bytes[25..]);
@@ -703,7 +694,7 @@ internal partial class SuperZztElementProperties
         EditorStepTextBytes.CopyTo(bytes[151..]);
         bytes[171] = EditorCodeTextLength;
         EditorCodeTextBytes.CopyTo(bytes[172..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[192..], Score);
+        WriteInt16LittleEndian(bytes[192..], Score);
     }
 }
 
@@ -732,7 +723,7 @@ internal partial class ZztWorldHeader
 
     public string Name
     {
-        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
         set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
@@ -753,17 +744,17 @@ internal partial class ZztWorldHeader
     public static ZztWorldHeader Read(ReadOnlySpan<byte> bytes)
     {
         var result = new ZztWorldHeader();
-        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
-        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
+        result.BoardCount = ReadInt16LittleEndian(bytes[0..]);
+        result.Ammo = ReadInt16LittleEndian(bytes[2..]);
+        result.Gems = ReadInt16LittleEndian(bytes[4..]);
         bytes[6..13].CopyTo(result.Keys);
-        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
-        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
-        result.Torches = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
-        result.TorchCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
-        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
-        result.Unused25 = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[25..]);
+        result.Health = ReadInt16LittleEndian(bytes[13..]);
+        result.Board = ReadInt16LittleEndian(bytes[15..]);
+        result.Torches = ReadInt16LittleEndian(bytes[17..]);
+        result.TorchCycles = ReadInt16LittleEndian(bytes[19..]);
+        result.EnergyCycles = ReadInt16LittleEndian(bytes[21..]);
+        result.Unused25 = ReadInt16LittleEndian(bytes[23..]);
+        result.Score = ReadInt16LittleEndian(bytes[25..]);
         result.NameLength = bytes[27];
         bytes[28..48].CopyTo(result.NameBytes);
         for (int i = 0, j = 0; i < 10; i++, j += 21)
@@ -776,17 +767,17 @@ internal partial class ZztWorldHeader
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], BoardCount);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Ammo);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Gems);
+        WriteInt16LittleEndian(bytes[0..], BoardCount);
+        WriteInt16LittleEndian(bytes[2..], Ammo);
+        WriteInt16LittleEndian(bytes[4..], Gems);
         Keys.CopyTo(bytes[6..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Health);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Board);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Torches);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], TorchCycles);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], EnergyCycles);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], Unused25);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[25..], Score);
+        WriteInt16LittleEndian(bytes[13..], Health);
+        WriteInt16LittleEndian(bytes[15..], Board);
+        WriteInt16LittleEndian(bytes[17..], Torches);
+        WriteInt16LittleEndian(bytes[19..], TorchCycles);
+        WriteInt16LittleEndian(bytes[21..], EnergyCycles);
+        WriteInt16LittleEndian(bytes[23..], Unused25);
+        WriteInt16LittleEndian(bytes[25..], Score);
         bytes[27] = NameLength;
         NameBytes.CopyTo(bytes[28..]);
         for (int i = 0, j = 0; i < 10; i++, j += 21)
@@ -822,7 +813,7 @@ internal partial class SuperZztWorldHeader
 
     public string Name
     {
-        get => CodePage437.Encoding.GetString(NameBytes[..NameLength]);
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
         set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
     }
 
@@ -843,46 +834,46 @@ internal partial class SuperZztWorldHeader
     public static SuperZztWorldHeader Read(ReadOnlySpan<byte> bytes)
     {
         var result = new SuperZztWorldHeader();
-        result.BoardCount = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.Ammo = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
-        result.Gems = BinaryPrimitives.ReadInt16LittleEndian(bytes[4..]);
+        result.BoardCount = ReadInt16LittleEndian(bytes[0..]);
+        result.Ammo = ReadInt16LittleEndian(bytes[2..]);
+        result.Gems = ReadInt16LittleEndian(bytes[4..]);
         bytes[6..13].CopyTo(result.Keys);
-        result.Health = BinaryPrimitives.ReadInt16LittleEndian(bytes[13..]);
-        result.Board = BinaryPrimitives.ReadInt16LittleEndian(bytes[15..]);
-        result.Unused19 = BinaryPrimitives.ReadInt16LittleEndian(bytes[17..]);
-        result.Score = BinaryPrimitives.ReadInt16LittleEndian(bytes[19..]);
-        result.Unused23 = BinaryPrimitives.ReadInt16LittleEndian(bytes[21..]);
-        result.EnergyCycles = BinaryPrimitives.ReadInt16LittleEndian(bytes[23..]);
+        result.Health = ReadInt16LittleEndian(bytes[13..]);
+        result.Board = ReadInt16LittleEndian(bytes[15..]);
+        result.Unused19 = ReadInt16LittleEndian(bytes[17..]);
+        result.Score = ReadInt16LittleEndian(bytes[19..]);
+        result.Unused23 = ReadInt16LittleEndian(bytes[21..]);
+        result.EnergyCycles = ReadInt16LittleEndian(bytes[23..]);
         result.NameLength = bytes[25];
         bytes[26..46].CopyTo(result.NameBytes);
         for (int i = 0, j = 0; i < 16; i++, j += 21)
             result.Flags[i] = Flag.Read(bytes[(46 + j)..]);
         result.TimePassed = Time.Read(bytes[382..]);
         result.Locked = bytes[386];
-        result.Stones = BinaryPrimitives.ReadInt16LittleEndian(bytes[387..]);
+        result.Stones = ReadInt16LittleEndian(bytes[387..]);
         bytes[389..1022].CopyTo(result.Extra);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], BoardCount);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Ammo);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[4..], Gems);
+        WriteInt16LittleEndian(bytes[0..], BoardCount);
+        WriteInt16LittleEndian(bytes[2..], Ammo);
+        WriteInt16LittleEndian(bytes[4..], Gems);
         Keys.CopyTo(bytes[6..]);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[13..], Health);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[15..], Board);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[17..], Unused19);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[19..], Score);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[21..], Unused23);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[23..], EnergyCycles);
+        WriteInt16LittleEndian(bytes[13..], Health);
+        WriteInt16LittleEndian(bytes[15..], Board);
+        WriteInt16LittleEndian(bytes[17..], Unused19);
+        WriteInt16LittleEndian(bytes[19..], Score);
+        WriteInt16LittleEndian(bytes[21..], Unused23);
+        WriteInt16LittleEndian(bytes[23..], EnergyCycles);
         bytes[25] = NameLength;
         NameBytes.CopyTo(bytes[26..]);
         for (int i = 0, j = 0; i < 16; i++, j += 21)
             Flags[i].Write(bytes[(46 + j)..]);
         TimePassed.Write(bytes[382..]);
         bytes[386] = Locked;
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[387..], Stones);
+        WriteInt16LittleEndian(bytes[387..], Stones);
         Extra.CopyTo(bytes[389..]);
     }
 }
@@ -913,21 +904,21 @@ internal partial class ZztDatHeader
     public static ZztDatHeader Read(ReadOnlySpan<byte> bytes)
     {
         var result = new ZztDatHeader();
-        result.Count = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
+        result.Count = ReadInt16LittleEndian(bytes[0..]);
         for (int i = 0, j = 0; i < 24; i++, j += 51)
             result.Entries[i] = ZztDatEntry.Read(bytes[(2 + j)..]);
         for (int i = 0, j = 0; i < 24; i++, j += 4)
-            result.Offsets[i] = BinaryPrimitives.ReadInt32LittleEndian(bytes[(1226 + j)..]);
+            result.Offsets[i] = ReadInt32LittleEndian(bytes[(1226 + j)..]);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Count);
+        WriteInt16LittleEndian(bytes[0..], Count);
         for (int i = 0, j = 0; i < 24; i++, j += 51)
             Entries[i].Write(bytes[(2 + j)..]);
         for (int i = 0, j = 0; i < 24; i++, j += 4)
-            BinaryPrimitives.WriteInt32LittleEndian(bytes[(1226 + j)..], Offsets[i]);
+            WriteInt32LittleEndian(bytes[(1226 + j)..], Offsets[i]);
     }
 }
 
@@ -945,7 +936,7 @@ internal partial struct ZztDatEntry
 
     public string Name
     {
-        get => CodePage437.Encoding.GetString(Bytes[..Length]);
+        get => CodePage437.Encoding.GetString(Bytes[..Math.Min(Length, (byte)50)]);
         set => Length = (byte)CodePage437.Encoding.GetBytes(value, Bytes);
     }
 
@@ -1133,15 +1124,15 @@ internal partial struct Time
     public static Time Read(ReadOnlySpan<byte> bytes)
     {
         var result = new Time();
-        result.Seconds = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.Hundredths = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        result.Seconds = ReadInt16LittleEndian(bytes[0..]);
+        result.Hundredths = ReadInt16LittleEndian(bytes[2..]);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], Seconds);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Hundredths);
+        WriteInt16LittleEndian(bytes[0..], Seconds);
+        WriteInt16LittleEndian(bytes[2..], Hundredths);
     }
 }
 
@@ -1174,15 +1165,15 @@ internal partial struct RawVector
     public static RawVector Read(ReadOnlySpan<byte> bytes)
     {
         var result = new RawVector();
-        result.X = BinaryPrimitives.ReadInt16LittleEndian(bytes[0..]);
-        result.Y = BinaryPrimitives.ReadInt16LittleEndian(bytes[2..]);
+        result.X = ReadInt16LittleEndian(bytes[0..]);
+        result.Y = ReadInt16LittleEndian(bytes[2..]);
         return result;
     }
 
     public void Write(Span<byte> bytes)
     {
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[0..], X);
-        BinaryPrimitives.WriteInt16LittleEndian(bytes[2..], Y);
+        WriteInt16LittleEndian(bytes[0..], X);
+        WriteInt16LittleEndian(bytes[2..], Y);
     }
 }
 
@@ -1200,7 +1191,7 @@ internal partial struct Flag
 
     public string Text
     {
-        get => CodePage437.Encoding.GetString(Bytes[..Length]);
+        get => CodePage437.Encoding.GetString(Bytes[..Math.Min(Length, (byte)20)]);
         set => Length = (byte)CodePage437.Encoding.GetBytes(value, Bytes);
     }
 

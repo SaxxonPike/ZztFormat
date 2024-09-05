@@ -13,65 +13,23 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Update="Resources\SuperZztElements.bin">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Resources\ZztElements.bin">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Resources\SuperZzt.rom">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Resources\Zzt.rom">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Resources\VgaPalette.rom">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-      <Content Update="Resources\Font14.rom">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="Structures\Structures.tt">
+      <None Update="Structures.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>Structures.cs</LastGenOutput>
       </None>
-      <None Update="Structures\Structures.txt">
-        <DependentUpon>Structures.tt</DependentUpon>
-      </None>
-      <None Update="Resources\Resources.tt">
+      <None Update="Resources.tt">
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>Resources.cs</LastGenOutput>
-      </None>
-      <None Update="Resources\SuperZzt.elements">
-        <DependentUpon>Resources.tt</DependentUpon>
-      </None>
-      <None Update="Resources\SuperZzt.rom">
-        <DependentUpon>Resources.tt</DependentUpon>
-      </None>
-      <None Update="Resources\VgaPalette.rom">
-        <DependentUpon>Resources.tt</DependentUpon>
-      </None>
-      <None Update="Resources\Zzt.elements">
-        <DependentUpon>Resources.tt</DependentUpon>
-      </None>
-      <None Update="Resources\Zzt.rom">
-        <DependentUpon>Resources.tt</DependentUpon>
-      </None>
-      <None Update="Resources\Font14.rom">
-        <DependentUpon>Resources.tt</DependentUpon>
       </None>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Update="Structures\Structures.cs">
+      <Compile Update="Structures.cs">
         <AutoGen>True</AutoGen>
         <DesignTime>True</DesignTime>
         <DependentUpon>Structures.tt</DependentUpon>
       </Compile>
-      <Compile Update="Resources\Resources.cs">
+      <Compile Update="Resources.cs">
         <AutoGen>True</AutoGen>
         <DesignTime>True</DesignTime>
         <DependentUpon>Resources.tt</DependentUpon>

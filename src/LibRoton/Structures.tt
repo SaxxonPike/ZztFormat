@@ -5,12 +5,10 @@
 // Automatically generated from Structures.txt and Structures.tt
 
 using JetBrains.Annotations;
-using System.Buffers.Binary;
 using System.Text;
+using static System.Buffers.Binary.BinaryPrimitives;
 
-// ReSharper disable PartialTypeWithSinglePart
-// ReSharper disable UseObjectOrCollectionInitializer
-namespace LibRoton.Structures;
+namespace LibRoton;
 
 #region Utilities
 
@@ -24,13 +22,6 @@ internal static class CodePage437
     });
 
     public static Encoding Encoding => _encoding.Value;
-
-    public static byte[] GetBytes(Span<char> chars)
-    {
-        var bytes = new byte[chars.Length];
-        _encoding.Value.GetBytes(chars, bytes);
-        return bytes;
-    }
 }
 
 #endregion
@@ -251,10 +242,11 @@ internal partial <#= structKind #> <#= structName #><#= structImplSet #>
                 var stringDataField = kv2.Value;
                 var stringLengthField = stringLengthFields[structName][stringFieldName];
                 var stringLengthType = propertyTypes[structName][stringLengthField];
+                var stringMaxLength = propertyLengths[structName][stringDataField];
 #>
     public string <#= stringFieldName #>
     {
-        get => CodePage437.Encoding.GetString(<#= stringDataField #>[..<#= stringLengthField #>]);
+        get => CodePage437.Encoding.GetString(<#= stringDataField #>[..Math.Min(<#= stringLengthField #>, (<#= stringLengthType #>)<#= stringMaxLength #>)]);
         set => <#= stringLengthField #> = (<#= stringLengthType #>)CodePage437.Encoding.GetBytes(value, <#= stringDataField #>);
     }
 
@@ -305,37 +297,37 @@ internal partial <#= structKind #> <#= structName #><#= structImplSet #>
                         case "short":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
-            result.<#= propName #>[i] = BinaryPrimitives.ReadInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+            result.<#= propName #>[i] = ReadInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
 <#
                             break;
                         case "ushort":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
-            result.<#= propName #>[i] = BinaryPrimitives.ReadUInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+            result.<#= propName #>[i] = ReadUInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
 <#
                             break;
                         case "int":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
-            result.<#= propName #>[i] = BinaryPrimitives.ReadInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+            result.<#= propName #>[i] = ReadInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
 <#
                             break;
                         case "uint":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
-            result.<#= propName #>[i] = BinaryPrimitives.ReadUInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+            result.<#= propName #>[i] = ReadUInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
 <#
                             break;
                         case "long":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
-            result.<#= propName #>[i] = BinaryPrimitives.ReadInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+            result.<#= propName #>[i] = ReadInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
 <#
                             break;
                         case "ulong":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
-            result.<#= propName #>[i] = BinaryPrimitives.ReadUInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
+            result.<#= propName #>[i] = ReadUInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..]);
 <#
                             break;
                         default:
@@ -362,32 +354,32 @@ internal partial <#= structKind #> <#= structName #><#= structImplSet #>
                             break;
                         case "short":
 #>
-        result.<#= propName #> = BinaryPrimitives.ReadInt16<#= propEndian #>(bytes[<#= propOffset #>..]);
+        result.<#= propName #> = ReadInt16<#= propEndian #>(bytes[<#= propOffset #>..]);
 <#
                             break;
                         case "ushort":
 #>
-        result.<#= propName #> = BinaryPrimitives.ReadUInt16<#= propEndian #>(bytes[<#= propOffset #>..]);
+        result.<#= propName #> = ReadUInt16<#= propEndian #>(bytes[<#= propOffset #>..]);
 <#
                             break;
                         case "int":
 #>
-        result.<#= propName #> = BinaryPrimitives.ReadInt32<#= propEndian #>(bytes[<#= propOffset #>..]);
+        result.<#= propName #> = ReadInt32<#= propEndian #>(bytes[<#= propOffset #>..]);
 <#
                             break;
                         case "uint":
 #>
-        result.<#= propName #> = BinaryPrimitives.ReadUInt32<#= propEndian #>(bytes[<#= propOffset #>..]);
+        result.<#= propName #> = ReadUInt32<#= propEndian #>(bytes[<#= propOffset #>..]);
 <#
                             break;
                         case "long":
 #>
-        result.<#= propName #> = BinaryPrimitives.ReadInt64<#= propEndian #>(bytes[<#= propOffset #>..]);
+        result.<#= propName #> = ReadInt64<#= propEndian #>(bytes[<#= propOffset #>..]);
 <#
                             break;
                         case "ulong":
 #>
-        result.<#= propName #> = BinaryPrimitives.ReadUInt64<#= propEndian #>(bytes[<#= propOffset #>..]);
+        result.<#= propName #> = ReadUInt64<#= propEndian #>(bytes[<#= propOffset #>..]);
 <#
                             break;
                         default:
@@ -431,37 +423,37 @@ internal partial <#= structKind #> <#= structName #><#= structImplSet #>
                         case "short":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
-            BinaryPrimitives.WriteInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+            WriteInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
 <#
                             break;
                         case "ushort":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 2)
-            BinaryPrimitives.WriteUInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+            WriteUInt16<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
 <#
                             break;
                         case "int":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
-            BinaryPrimitives.WriteInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+            WriteInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
 <#
                             break;
                         case "uint":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 4)
-            BinaryPrimitives.WriteUInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+            WriteUInt32<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
 <#
                             break;
                         case "long":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
-            BinaryPrimitives.WriteInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+            WriteInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
 <#
                             break;
                         case "ulong":
 #>
         for (int i = 0, j = 0; i < <#= propLength #>; i++, j += 8)
-            BinaryPrimitives.WriteUInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
+            WriteUInt64<#= propEndian #>(bytes[(<#= propOffset #> + j)..], <#= propName #>[i]);
 <#
                             break;
                         default:
@@ -488,32 +480,32 @@ internal partial <#= structKind #> <#= structName #><#= structImplSet #>
                             break;
                         case "short":
 #>
-        BinaryPrimitives.WriteInt16<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+        WriteInt16<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
 <#
                             break;
                         case "ushort":
 #>
-        BinaryPrimitives.WriteUInt16<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+        WriteUInt16<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
 <#
                             break;
                         case "int":
 #>
-        BinaryPrimitives.WriteInt32<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+        WriteInt32<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
 <#
                             break;
                         case "uint":
 #>
-        BinaryPrimitives.WriteUInt32<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+        WriteUInt32<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
 <#
                             break;
                         case "long":
 #>
-        BinaryPrimitives.WriteInt64<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+        WriteInt64<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
 <#
                             break;
                         case "ulong":
 #>
-        BinaryPrimitives.WriteUInt64<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
+        WriteUInt64<#= propEndian #>(bytes[<#= propOffset #>..], <#= propName #>);
 <#
                             break;
                         default:

@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace LibRoton.Structures;
+namespace LibRoton;
 
 [PublicAPI]
 public partial class Actor

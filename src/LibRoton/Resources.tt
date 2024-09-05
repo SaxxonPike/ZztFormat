@@ -8,7 +8,7 @@
 
 using JetBrains.Annotations;
 
-namespace LibRoton.Resources;
+namespace LibRoton;
 
 <#
     byte[] IncludeInline(string path) => 
@@ -43,10 +43,12 @@ namespace LibRoton.Resources;
     string BuildInlinedFile(string name, string fileName)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"    public static byte[] {name} => new byte[]");
+        sb.AppendLine($"    private static Lazy<byte[]> _raw{name} = new(() => new byte[]");
         sb.AppendLine("    {");
         sb.AppendLine(FormatBytes(IncludeInline(fileName)));
-        sb.AppendLine("    };");
+        sb.AppendLine("    });");
+        sb.AppendLine();
+        sb.AppendLine($"    public static ReadOnlySpan<byte> {name} => _raw{name}.Value;");
         return sb.ToString();
     }
 #>

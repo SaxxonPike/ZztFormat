@@ -1,7 +1,17 @@
-namespace LibRoton.Structures;
+namespace LibRoton;
 
 public partial struct Vec2 : IEquatable<Vec2>
 {
+    public Vec2()
+    {
+    }
+
+    public Vec2(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+    
     internal RawPosition ToRawPosition() =>
         new() { X = (byte)X, Y = (byte)Y };
 

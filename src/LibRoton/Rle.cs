@@ -1,8 +1,11 @@
-﻿namespace LibRoton.Structures;
+﻿namespace LibRoton;
 
 internal static class Rle
 {
-    public static void Unpack(Stream stream, Span<RawTile> tiles)
+    public static bool Unpack(
+        Stream stream,
+        Span<RawTile> tiles, 
+        ReadOptions options = default)
     {
         try
         {
@@ -25,25 +28,38 @@ internal static class Rle
                         break;
                 }
             }
+
+            return true;
         }
-        catch (IndexOutOfRangeException)
+        catch (Exception)
         {
-            // Do nothing.
-            // Might have a corrupt board.
+            if (options.HasFlag(ReadOptions.ThrowOnCorruptBoards))
+                throw;
+            return false;
         }
     }
 
-    public static void Pack(Stream stream, ReadOnlySpan<RawTile> tiles)
+    public static void Pack(
+        Stream stream, 
+        ReadOnlySpan<RawTile> tiles,
+        WriteOptions options = default)
     {
         var runData = tiles[0];
         var runCount = 0;
+        
+        // This determines the maximum length of runs. A run of 256 is encoded
+        // as 0x00.
+        
+        var runMax = options.HasFlag(WriteOptions.Allow256RleCount)
+            ? 256
+            : 255;
 
         foreach (var tile in tiles)
         {
             if (tile == runData)
             {
                 runCount++;
-                if (runCount < byte.MaxValue)
+                if (runCount < runMax)
                     continue;
             }
 
