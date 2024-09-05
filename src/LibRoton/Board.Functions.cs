@@ -93,7 +93,7 @@ public partial class Board
         };
     }
 
-    public static Board Read(Stream stream, int worldType)
+    public static Board Read(Stream stream, WorldType worldType, ReadOptions options = default)
     {
         byte[]? boardBuf = default;
 
@@ -109,19 +109,41 @@ public partial class Board
 
             var board = worldType switch
             {
-                -1 => ReadZztBoard(dataStream),
-                -2 => ReadSuperZztBoard(dataStream),
+                WorldType.Zzt => ReadZztBoard(dataStream),
+                WorldType.SuperZzt => ReadSuperZztBoard(dataStream),
                 _ => throw new LibRotonException(
                     $"Unknown world type {worldType}.")
             };
 
             if (board == null)
             {
+                if (options.HasFlag(ReadOptions.ThrowOnCorruptBoards))
+                    throw new LibRotonException(
+                        "A corrupt board was found.");
+
+                if (!options.HasFlag(ReadOptions.KeepCorruptBoards))
+                {
+                    return Create(worldType);
+                }
+                
                 // The board data needs to be duplicated in order to be
-                // able to free the temporary board memory.
+                // able to free the temporary board memory. We still grab
+                // the board name when available, because it is a fixed offset
+                // from the beginning of the data.
 
                 return new Board
                 {
+                    Name = worldType switch
+                    {
+                        WorldType.Zzt => boardBuf.Length >= ZztBoardHeader.Size
+                            ? ZztBoardHeader.Read(boardBuf).Name
+                            : string.Empty,
+                        WorldType.SuperZzt => boardBuf.Length >= SuperZztBoardHeader.Size
+                            ? SuperZztBoardHeader.Read(boardBuf).Name
+                            : string.Empty,
+                        _ => throw new LibRotonException(
+                            $"Unknown world type {worldType}.")
+                    },
                     Extra = boardBuf.AsSpan(0, size).ToArray()
                 };
             }
@@ -248,7 +270,6 @@ public partial class Board
             Leader = info.Leader,
             Under = info.Under.ToTile(),
             Instruction = info.Instruction,
-            Length = info.Length > 0 ? script.Length : info.Length,
             Script = script
         };
     }
@@ -268,7 +289,6 @@ public partial class Board
             Leader = info.Leader,
             Under = info.Under.ToTile(),
             Instruction = info.Instruction,
-            Length = info.Length > 0 ? script.Length : info.Length,
             Script = script
         };
     }
@@ -309,6 +329,30 @@ public partial class Board
         return result;
     }
 
+    internal static Dictionary<Actor, int> ConvertActorBindings(IEnumerable<Actor> actors)
+    {
+        var index = 0;
+        var scripts = new Dictionary<char[], int>();
+        var result = new Dictionary<Actor, int>();
+
+        foreach (var actor in actors)
+        {
+            if (actor.Script.Length > 0)
+            {
+                scripts.TryAdd(actor.Script, index);
+                result.TryAdd(actor, scripts[actor.Script]);
+            }
+            else
+            {
+                result.TryAdd(actor, 0);
+            }
+            
+            index++;
+        }
+
+        return result;
+    }
+
     internal static void WriteZztBoard(Stream stream, Board board)
     {
         var dataStream = new MemoryStream();
@@ -332,8 +376,10 @@ public partial class Board
             ActorCount = (short)(board.Actors.Count - 1)
         }.Write(dataStream);
 
+        var binds = ConvertActorBindings(board.Actors);
+
         foreach (var actor in board.Actors)
-            WriteZztActor(dataStream, actor);
+            WriteZztActor(dataStream, binds[actor], actor);
 
         Span<byte> sizeBuf = stackalloc byte[2];
         WriteInt16LittleEndian(sizeBuf, (short)dataStream.Length);
@@ -364,8 +410,10 @@ public partial class Board
             Camera = board.Camera.ToRawVector()
         }.Write(dataStream);
 
+        var binds = ConvertActorBindings(board.Actors);
+
         foreach (var actor in board.Actors)
-            WriteZztActor(dataStream, actor);
+            WriteZztActor(dataStream, binds[actor], actor);
 
         Span<byte> sizeBuf = stackalloc byte[2];
         WriteInt16LittleEndian(sizeBuf, (short)dataStream.Length);
@@ -382,18 +430,16 @@ public partial class Board
         return result;
     }
 
-    internal static void ConvertScript(Stream stream, int length, ReadOnlySpan<char> script)
+    internal static void ConvertScript(Stream stream, ReadOnlySpan<char> script)
     {
-        if (length < 1 || script.Length < 1)
-            return;
-
-        length = CodePage437.Encoding.GetByteCount(script);
-        Span<byte> buf = stackalloc byte[length];
+        // var length = CodePage437.Encoding.GetByteCount(script);
+        Span<byte> buf = stackalloc byte[script.Length];
         CodePage437.Encoding.GetBytes(script, buf);
         stream.Write(buf);
+        // return length;
     }
 
-    internal static void WriteZztActor(Stream stream, Actor actor)
+    internal static void WriteZztActor(Stream stream, int bind, Actor actor)
     {
         var info = new ZztActor
         {
@@ -405,14 +451,15 @@ public partial class Board
             Leader = (short)actor.Leader,
             Under = RawTile.FromTile(actor.Under),
             Instruction = (short)actor.Instruction,
-            Length = (short)actor.Length
+            Length = bind > 0 ? (short)-bind : (short)actor.Script.Length
         };
 
         info.Write(stream);
-        ConvertScript(stream, info.Length, actor.Script);
+        if (info.Length > 0)
+            ConvertScript(stream, actor.Script);
     }
 
-    internal static void WriteSuperZztActor(Stream stream, Actor actor)
+    internal static void WriteSuperZztActor(Stream stream, int bind, Actor actor)
     {
         var info = new ZztActor
         {
@@ -424,10 +471,11 @@ public partial class Board
             Leader = (short)actor.Leader,
             Under = RawTile.FromTile(actor.Under),
             Instruction = (short)actor.Instruction,
-            Length = (short)actor.Length
+            Length = bind > 0 ? (short)-bind : (short)actor.Script.Length
         };
 
         info.Write(stream);
-        ConvertScript(stream, info.Length, actor.Script);
+        if (info.Length > 0)
+            ConvertScript(stream, actor.Script);
     }
 }

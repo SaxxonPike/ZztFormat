@@ -21,6 +21,27 @@
         <Generator>TextTemplatingFileGenerator</Generator>
         <LastGenOutput>Resources.cs</LastGenOutput>
       </None>
+      <None Update="Font14.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Structures.txt">
+        <DependentUpon>Structures.tt</DependentUpon>
+      </None>
+      <None Update="SuperZzt.elements">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="SuperZzt.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="VgaPalette.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Zzt.elements">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
+      <None Update="Zzt.rom">
+        <DependentUpon>Resources.tt</DependentUpon>
+      </None>
     </ItemGroup>
 
     <ItemGroup>

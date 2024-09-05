@@ -71,7 +71,7 @@ public partial class World
 
         var boards = new List<Board>();
         for (var i = 0; i <= header.BoardCount; i++)
-            boards.Add(Board.Read(stream, -1));
+            boards.Add(Board.Read(stream, WorldType.Zzt));
 
         return new World
         {
@@ -103,7 +103,7 @@ public partial class World
 
         var boards = new List<Board>();
         for (var i = 0; i <= header.BoardCount; i++)
-            boards.Add(Board.Read(stream, -2));
+            boards.Add(Board.Read(stream, WorldType.SuperZzt));
 
         return new World
         {

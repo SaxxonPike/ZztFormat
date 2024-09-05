@@ -29,14 +29,14 @@ public class WorldTests
     }
 
     [Test]
-    [TestCase("TOWN.BRD", -1)]
-    public void TestBoardLoad(string fileName, int worldType)
+    [TestCase("TOWN.BRD", WorldType.Zzt)]
+    public void TestBoardLoad(string fileName, WorldType type)
     {
         var boardStream = File.OpenRead(Path.Combine(TestPaths.Files, fileName));
 
         var sw = new Stopwatch();
         sw.Start();
-        var board = Board.Read(boardStream, worldType);
+        var board = Board.Read(boardStream, type);
         sw.Stop();
 
         TestContext.Out.WriteLine("Elapsed: {0}", sw.Elapsed);

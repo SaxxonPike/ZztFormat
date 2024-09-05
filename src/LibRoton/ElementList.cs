@@ -2,15 +2,14 @@ namespace LibRoton;
 
 public static class ElementList
 {
-    public static List<Element> Load(WorldType worldType)
-    {
-        return worldType switch
+    public static List<Element> Load(WorldType worldType) =>
+        worldType switch
         {
             WorldType.Zzt => LoadZztElements(),
             WorldType.SuperZzt => LoadSuperZztElements(),
-            _ => throw new Exception($"Unknown world type {worldType}.")
+            _ => throw new LibRotonException(
+                $"Unknown world type {worldType}.")
         };
-    }
 
     internal static List<Element> LoadZztElements()
     {
