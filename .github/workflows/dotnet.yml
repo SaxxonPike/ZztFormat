@@ -21,8 +21,14 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore src/ZztFormat.sln
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build src/ZztFormat.sln --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test src/ZztFormat.sln --no-build --verbosity normal
+    - name: Publish NuGet
+      uses: brandedoutcast/publish-nuget@v2.5.5
+      with:
+        PROJECT_FILE_PATH: src/ZztFormat/ZztFormat.csproj
+        BUILD_CONFIGURATION: Release
+        PACKAGE_NAME: ZztFormat
