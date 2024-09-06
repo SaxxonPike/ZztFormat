@@ -1,0 +1,234 @@
+﻿endian little
+
+class ZztActor
+RawPosition Position
+RawVector Step
+short Cycle
+byte[3] Parameters
+short Follower
+short Leader
+RawTile Under
+int Pointer
+short Instruction
+short Length
+byte[8] Extra
+end
+
+class SuperZztActor
+RawPosition Position
+RawVector Step
+short Cycle
+byte[3] Parameters
+short Follower
+short Leader
+RawTile Under
+int Pointer
+short Instruction
+short Length
+end
+
+class ZztBoardHeader
+byte NameLength
+byte[50] NameBytes
+string NameLength NameBytes Name
+end
+
+class SuperZztBoardHeader
+byte NameLength
+byte[60] NameBytes
+string NameLength NameBytes Name
+end 
+
+class ZztBoardInfo
+byte MaxShots
+byte DarkBit
+byte[4] Exits
+byte RestartOnZapBit
+byte MessageLength
+byte[58] MessageBytes
+RawPosition Enter
+short TimeLimit
+byte[16] Extra
+short ActorCount
+string MessageLength MessageBytes Message
+end
+
+class SuperZztBoardInfo
+byte MaxShots
+byte[4] Exits
+byte RestartOnZapBit
+RawPosition Enter
+RawVector Camera
+short TimeLimit
+byte[14] Extra
+short ActorCount
+end
+
+class ZztElementProperties
+byte Character
+byte Color
+byte DestructibleBit
+byte PushableBit
+byte AlwaysVisibleBit
+byte EditorFloorBit
+byte FloorBit
+byte DrawFuncBit
+int DrawFunc
+short Cycle
+int ActFunc
+int InteractFunc
+short Menu
+byte MenuKey
+byte NameLength
+byte[20] NameBytes
+byte EditorCategoryTextLength
+byte[20] EditorCategoryTextBytes
+byte EditorP1TextLength
+byte[20] EditorP1TextBytes
+byte EditorP2TextLength
+byte[20] EditorP2TextBytes
+byte EditorP3TextLength
+byte[20] EditorP3TextBytes
+byte EditorBoardTextLength
+byte[20] EditorBoardTextBytes
+byte EditorStepTextLength
+byte[20] EditorStepTextBytes
+byte EditorCodeTextLength
+byte[20] EditorCodeTextBytes
+short Score
+string NameLength NameBytes Name
+string EditorCategoryTextLength EditorCategoryTextBytes EditorCategoryText
+string EditorP1TextLength EditorP1TextBytes EditorP1Text
+string EditorP2TextLength EditorP2TextBytes EditorP2Text
+string EditorP3TextLength EditorP3TextBytes EditorP3Text
+string EditorBoardTextLength EditorBoardTextBytes EditorBoardText
+string EditorStepTextLength EditorStepTextBytes EditorStepText
+string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
+end
+
+class SuperZztElementProperties
+byte Character
+byte Color
+byte DestructibleBit
+byte PushableBit
+byte EditorFloorBit
+byte FloorBit
+byte DrawFuncBit
+int DrawFunc
+short Cycle
+int ActFunc
+int InteractFunc
+short Menu
+byte MenuKey
+byte NameLength
+byte[20] NameBytes
+byte EditorCategoryTextLength
+byte[20] EditorCategoryTextBytes
+byte EditorP1TextLength
+byte[20] EditorP1TextBytes
+byte EditorP2TextLength
+byte[20] EditorP2TextBytes
+byte EditorP3TextLength
+byte[20] EditorP3TextBytes
+byte EditorBoardTextLength
+byte[20] EditorBoardTextBytes
+byte EditorStepTextLength
+byte[20] EditorStepTextBytes
+byte EditorCodeTextLength
+byte[20] EditorCodeTextBytes
+short Score
+string NameLength NameBytes Name
+string EditorCategoryTextLength EditorCategoryTextBytes EditorCategoryText
+string EditorP1TextLength EditorP1TextBytes EditorP1Text
+string EditorP2TextLength EditorP2TextBytes EditorP2Text
+string EditorP3TextLength EditorP3TextBytes EditorP3Text
+string EditorBoardTextLength EditorBoardTextBytes EditorBoardText
+string EditorStepTextLength EditorStepTextBytes EditorStepText
+string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
+end
+
+class ZztWorldHeader
+short BoardCount
+short Ammo
+short Gems
+byte[7] Keys
+short Health
+short Board
+short Torches
+short TorchCycles
+short EnergyCycles
+short Unused25
+short Score
+byte NameLength
+byte[20] NameBytes
+Flag[10] Flags
+Time TimePassed
+byte Locked
+byte[247] Extra
+string NameLength NameBytes Name
+end
+
+class SuperZztWorldHeader
+short BoardCount
+short Ammo
+short Gems
+byte[7] Keys
+short Health
+short Board
+short Unused19
+short Score
+short Unused23
+short EnergyCycles
+byte NameLength
+byte[20] NameBytes
+Flag[16] Flags
+Time TimePassed
+byte Locked
+short Stones
+byte[633] Extra
+string NameLength NameBytes Name
+end
+
+class ZztDatHeader
+short Count
+ZztDatEntry[24] Entries
+int[24] Offsets
+end
+
+struct ZztDatEntry
+byte Length
+byte[50] Bytes
+string Length Bytes Name
+end
+
+struct RawPosition
+byte X
+byte Y
+end
+
+struct RawTile
+byte ElementId
+byte Color
+end
+
+struct TileRle
+byte Count
+byte ElementId
+byte Color
+end
+
+struct Time
+short Seconds
+short Hundredths
+end
+
+struct RawVector
+short X
+short Y
+end
+
+struct Flag
+byte Length
+byte[20] Bytes
+string Length Bytes Text
+end
