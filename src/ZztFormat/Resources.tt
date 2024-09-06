@@ -4,15 +4,29 @@
 <#@ import namespace="System.Text.RegularExpressions" #>
 <#@ import namespace="System.Text" #>
 <#@ import namespace="Microsoft.SqlServer.Server" #>
+<#@ import namespace="System.IO.Compression" #>
 // Automatically generated from Resources.tt
 
 using JetBrains.Annotations;
+using System.IO.Compression;
 
 namespace ZztFormat;
 
 <#
     byte[] IncludeInline(string path) => 
         File.ReadAllBytes(Host.ResolvePath(path));
+
+    byte[] Compress(byte[] data)
+    {
+        using var mem = new MemoryStream(data);
+        using var result = new MemoryStream();
+        using var gzip = new GZipStream(result, CompressionMode.Compress);
+        mem.CopyTo(gzip);
+        gzip.Flush();
+        gzip.Close();
+        result.Flush();
+        return result.ToArray();
+    }
 
     string FormatBytes(byte[] bytes)
     {
@@ -45,7 +59,7 @@ namespace ZztFormat;
         var sb = new StringBuilder();
         sb.AppendLine($"    private static Lazy<byte[]> _raw{name} = new(() => new byte[]");
         sb.AppendLine("    {");
-        sb.AppendLine(FormatBytes(IncludeInline(fileName)));
+        sb.AppendLine(FormatBytes(Compress(IncludeInline(fileName))));
         sb.AppendLine("    });");
         sb.AppendLine();
         sb.AppendLine($"    public static ReadOnlySpan<byte> {name} => _raw{name}.Value;");
@@ -56,6 +70,15 @@ namespace ZztFormat;
 [PublicAPI]
 internal static class Resources
 {
+    private static byte[] Decompress(byte[] compressed)
+    {
+        using var mem = new MemoryStream(compressed);
+        using var decomp = new GZipStream(mem, CompressionMode.Decompress);
+        using var result = new MemoryStream();
+        decomp.CopyTo(result);
+        return result.ToArray();
+    }
+
 <#= BuildInlinedFile("ZztElements", "Zzt.elements") #>
 <#= BuildInlinedFile("SuperZztElements", "SuperZzt.elements") #>
 }
