@@ -32,3 +32,19 @@ Also remember: the line separator character in ZZT is `\r`.
 ```csharp
 world.Boards[0].Actors[1].Script = "@guy\r#end\r:touch\rHello!".ToCharArray();
 ```
+
+## Developer Notes
+
+T4 templates are used to automatically generate static data and data models.
+
+- `Resources.tt`
+  - This template takes binary blobs for static data (such as font and palette)
+    and builds them into the assembly as lazy-initialized byte arrays.
+    - Font: 8x14 as used by ZZT 3.2
+    - Palette: standard IBM VGA palette
+- `Structures.tt`
+  - This template builds data model classes and structs for the raw binary
+    content. The data model is populated using the definitions in
+    `Structures.txt`. The file format documentation used to verify these
+    structures is here:
+    [ZZT Format @ ModdingWiki](https://moddingwiki.shikadi.net/wiki/ZZT_Format)

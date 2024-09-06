@@ -699,6 +699,178 @@ internal partial class SuperZztElementProperties
 }
 
 [PublicAPI]
+internal partial class ZztHighScoreList
+{
+    public const int Size = 1590;
+
+    public ZztHighScore[] Scores { get; init; } = new ZztHighScore[30];
+
+    public static ZztHighScoreList Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static ZztHighScoreList Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new ZztHighScoreList();
+        for (int i = 0, j = 0; i < 30; i++, j += 53)
+            result.Scores[i] = ZztHighScore.Read(bytes[(0 + j)..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        for (int i = 0, j = 0; i < 30; i++, j += 53)
+            Scores[i].Write(bytes[(0 + j)..]);
+    }
+}
+
+[PublicAPI]
+internal partial struct ZztHighScore
+{
+    public const int Size = 53;
+
+    public ZztHighScore()
+    {
+    }
+
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[50];
+    public short Score { get; set; }
+
+    public string Name
+    {
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)50)]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+    }
+
+    public static ZztHighScore Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static ZztHighScore Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new ZztHighScore();
+        result.NameLength = bytes[0];
+        bytes[1..51].CopyTo(result.NameBytes);
+        result.Score = ReadInt16LittleEndian(bytes[51..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = NameLength;
+        NameBytes.CopyTo(bytes[1..]);
+        WriteInt16LittleEndian(bytes[51..], Score);
+    }
+}
+
+[PublicAPI]
+internal partial class SuperZztHighScoreList
+{
+    public const int Size = 1890;
+
+    public SuperZztHighScore[] Scores { get; init; } = new SuperZztHighScore[30];
+
+    public static SuperZztHighScoreList Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static SuperZztHighScoreList Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new SuperZztHighScoreList();
+        for (int i = 0, j = 0; i < 30; i++, j += 63)
+            result.Scores[i] = SuperZztHighScore.Read(bytes[(0 + j)..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        for (int i = 0, j = 0; i < 30; i++, j += 63)
+            Scores[i].Write(bytes[(0 + j)..]);
+    }
+}
+
+[PublicAPI]
+internal partial struct SuperZztHighScore
+{
+    public const int Size = 63;
+
+    public SuperZztHighScore()
+    {
+    }
+
+    public byte NameLength { get; set; }
+    public byte[] NameBytes { get; init; } = new byte[60];
+    public short Score { get; set; }
+
+    public string Name
+    {
+        get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)60)]);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+    }
+
+    public static SuperZztHighScore Read(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        stream.ReadExactly(span);
+        return Read(span);
+    }
+
+    public void Write(Stream stream)
+    {
+        Span<byte> span = stackalloc byte[Size];
+        Write(span);
+        stream.Write(span);
+    }
+
+    public static SuperZztHighScore Read(ReadOnlySpan<byte> bytes)
+    {
+        var result = new SuperZztHighScore();
+        result.NameLength = bytes[0];
+        bytes[1..61].CopyTo(result.NameBytes);
+        result.Score = ReadInt16LittleEndian(bytes[61..]);
+        return result;
+    }
+
+    public void Write(Span<byte> bytes)
+    {
+        bytes[0] = NameLength;
+        NameBytes.CopyTo(bytes[1..]);
+        WriteInt16LittleEndian(bytes[61..], Score);
+    }
+}
+
+[PublicAPI]
 internal partial class ZztWorldHeader
 {
     public const int Size = 510;

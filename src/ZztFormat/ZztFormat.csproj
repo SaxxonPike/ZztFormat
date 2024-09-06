@@ -4,12 +4,25 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageId>ZztFormat</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Anthony Konzel (SaxxonPike)</Authors>
+        <PackageTags>ZZT</PackageTags>
+        <Description>
+            A class library that allows for reading and writing ZZT and Super
+            ZZT game world data. ZZT is a game creation system from 1990 written
+            by Tim Sweeney. For more information on ZZT, visit the Museum of
+            ZZT site: https://museumofzzt.com
+        </Description>
+        <PackageProjectUrl>https://github.com/saxxonpike/ZztFormat</PackageProjectUrl>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" Version="2024.2.0" />
-      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
     </ItemGroup>
 
     <ItemGroup>
