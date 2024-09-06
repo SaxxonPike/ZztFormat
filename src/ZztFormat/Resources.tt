@@ -56,10 +56,6 @@ namespace ZztFormat;
 [PublicAPI]
 internal static class Resources
 {
-<#= BuildInlinedFile("Font", "Font14.rom") #>
-<#= BuildInlinedFile("ZztRom", "Zzt.rom") #>
-<#= BuildInlinedFile("SuperZztRom", "SuperZzt.rom") #>
 <#= BuildInlinedFile("ZztElements", "Zzt.elements") #>
 <#= BuildInlinedFile("SuperZztElements", "SuperZzt.elements") #>
-<#= BuildInlinedFile("VgaPalette", "VgaPalette.rom") #>
 }
