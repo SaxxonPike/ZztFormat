@@ -247,7 +247,7 @@ internal partial <#= structKind #> <#= structName #><#= structImplSet #>
     public string <#= stringFieldName #>
     {
         get => CodePage437.Encoding.GetString(<#= stringDataField #>[..Math.Min(<#= stringLengthField #>, (<#= stringLengthType #>)<#= stringMaxLength #>)]);
-        set => <#= stringLengthField #> = (<#= stringLengthType #>)CodePage437.Encoding.GetBytes(value, <#= stringDataField #>);
+        set => <#= stringLengthField #> = (<#= stringLengthType #>)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (<#= stringLengthType #>)<#= stringMaxLength #>)), <#= stringDataField #>);
     }
 
 <#                

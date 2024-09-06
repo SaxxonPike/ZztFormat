@@ -15,7 +15,7 @@ public class WorldTests
     [TestCase("MONSTER.SZT")]
     public void TestWorldLoad(string fileName)
     {
-        var worldStream = File.OpenRead(Path.Combine(TestPaths.Files, fileName));
+        using var worldStream = File.OpenRead(Path.Combine(TestPaths.Files, fileName));
 
         var sw = new Stopwatch();
         sw.Start();
@@ -26,6 +26,20 @@ public class WorldTests
         TestContext.Out.WriteLine("Boards: {0}", world.Boards.Count);
         foreach (var board in world.Boards)
             TestContext.Out.WriteLine(board.Name);
+    }
+
+    [TestCase("TOWN.ZZT")]
+    [TestCase("ENIGMA.ZZT")]
+    [TestCase("BOOFX-D2.ZZT")]
+    [TestCase("MONSTER.SZT")]
+    public void TestWorldResave(string fileName)
+    {
+        using var worldStream = File.OpenRead(Path.Combine(TestPaths.Files, fileName));
+        var world = World.Read(worldStream);
+
+        var stream = new MemoryStream();
+        World.Write(stream, world);
+        stream.Flush();
     }
 
     [Test]
@@ -41,5 +55,54 @@ public class WorldTests
 
         TestContext.Out.WriteLine("Elapsed: {0}", sw.Elapsed);
         TestContext.Out.WriteLine("Board: {0}", board.Name);
+    }
+
+    [Test]
+    [TestCase(WorldType.Zzt)]
+    [TestCase(WorldType.SuperZzt)]
+    public void TestWorldSave(WorldType type)
+    {
+        var world = World.Create(type);
+        var stream = new MemoryStream();
+        World.Write(stream, world);
+        stream.Flush();
+    }
+
+    [Test]
+    [TestCase(WorldType.Zzt)]
+    [TestCase(WorldType.SuperZzt)]
+    public void TestWorldSaveFlags(WorldType type)
+    {
+        var flag = Testing.Random.GetString();
+        var world = World.Create(type);
+        world.Flags.Add(flag);
+
+        var stream = new MemoryStream();
+        World.Write(stream, world);
+        stream.Flush();
+
+        stream.Position = 0;
+
+        var readBack = World.Read(stream);
+        Assert.That(readBack.Flags, Contains.Item(flag[..20]));
+    }
+
+    [Test]
+    [TestCase(WorldType.Zzt)]
+    [TestCase(WorldType.SuperZzt)]
+    public void TestWorldSaveKeys(WorldType type)
+    {
+        var world = World.Create(type);
+        var color = Testing.Random.NextEnum<KeyColor>();
+        world.Keys.Add(color);
+
+        var stream = new MemoryStream();
+        World.Write(stream, world);
+        stream.Flush();
+
+        stream.Position = 0;
+
+        var readBack = World.Read(stream);
+        Assert.That(readBack.Keys, Contains.Item(color));
     }
 }
