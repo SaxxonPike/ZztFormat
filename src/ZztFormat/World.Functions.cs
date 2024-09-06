@@ -5,6 +5,48 @@ namespace ZztFormat;
 public partial class World
 {
     /// <summary>
+    /// Creates a blank <see cref="World"/> with one title screen
+    /// <see cref="Board"/> and typical defaults.
+    /// </summary>
+    /// <param name="type">
+    /// Type of world to create.
+    /// </param>
+    /// <returns></returns>
+    public static World Create(WorldType type)
+    {
+        var world = type switch
+        {
+            WorldType.Zzt => CreateZztWorld(),
+            WorldType.SuperZzt => CreateSuperZztWorld(),
+            _ => throw new ZztFormatException(
+                $"Unknown world type {type}.")
+        };
+
+        world.Boards[0].Name = "Title Screen";
+        return world;
+    }
+
+    /// <summary>
+    /// Create a blank ZZT world.
+    /// </summary>
+    internal static World CreateZztWorld() =>
+        new()
+        {
+            Type = WorldType.Zzt,
+            Boards = [Board.Create(WorldType.Zzt)]
+        };
+
+    /// <summary>
+    /// Create a blank Super ZZT world.
+    /// </summary>
+    internal static World CreateSuperZztWorld() =>
+        new()
+        {
+            Type = WorldType.SuperZzt,
+            Boards = [Board.Create(WorldType.Zzt)]
+        };
+
+    /// <summary>
     /// Reads a <see cref="World"/> from a <see cref="Stream"/>.
     /// </summary>
     /// <param name="stream">
@@ -141,9 +183,13 @@ public partial class World
     internal static Flag[] ConvertFlags(List<string> flags, int length)
     {
         var result = new Flag[length];
+        for (var i = 0; i < length; i++)
+            result[i] = new Flag();
+        
         var index = 0;
         foreach (var flag in flags)
             result[index++].Text = flag;
+
         return result;
     }
 
@@ -166,6 +212,10 @@ public partial class World
             throw new ZztFormatException(
                 "A minimum of 1 board is required.");
 
+        Span<byte> lenBuf = stackalloc byte[2];
+        BinaryPrimitives.WriteInt16LittleEndian(lenBuf, (short)world.Type);
+        stream.Write(lenBuf);
+        
         switch (world.Type)
         {
             case WorldType.Zzt:

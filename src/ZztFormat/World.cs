@@ -28,11 +28,11 @@ public partial class World
     /// Keys in the player's inventory.
     /// </summary>
     public HashSet<KeyColor> Keys { get; set; } = [];
-    
+
     /// <summary>
     /// Health of the player.
     /// </summary>
-    public int Health { get; set; }
+    public int Health { get; set; } = 100;
     
     /// <summary>
     /// Starting board when the world is loaded in-game. For saved games,

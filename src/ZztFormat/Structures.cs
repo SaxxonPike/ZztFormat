@@ -160,7 +160,7 @@ internal partial class ZztBoardHeader
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)50)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)50)), NameBytes);
     }
 
     public static ZztBoardHeader Read(Stream stream)
@@ -203,7 +203,7 @@ internal partial class SuperZztBoardHeader
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)60)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)60)), NameBytes);
     }
 
     public static SuperZztBoardHeader Read(Stream stream)
@@ -254,7 +254,7 @@ internal partial class ZztBoardInfo
     public string Message
     {
         get => CodePage437.Encoding.GetString(MessageBytes[..Math.Min(MessageLength, (byte)58)]);
-        set => MessageLength = (byte)CodePage437.Encoding.GetBytes(value, MessageBytes);
+        set => MessageLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)58)), MessageBytes);
     }
 
     public static ZztBoardInfo Read(Stream stream)
@@ -397,49 +397,49 @@ internal partial class ZztElementProperties
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), NameBytes);
     }
 
     public string EditorCategoryText
     {
         get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..Math.Min(EditorCategoryTextLength, (byte)20)]);
-        set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCategoryTextBytes);
+        set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorCategoryTextBytes);
     }
 
     public string EditorP1Text
     {
         get => CodePage437.Encoding.GetString(EditorP1TextBytes[..Math.Min(EditorP1TextLength, (byte)20)]);
-        set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP1TextBytes);
+        set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorP1TextBytes);
     }
 
     public string EditorP2Text
     {
         get => CodePage437.Encoding.GetString(EditorP2TextBytes[..Math.Min(EditorP2TextLength, (byte)20)]);
-        set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP2TextBytes);
+        set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorP2TextBytes);
     }
 
     public string EditorP3Text
     {
         get => CodePage437.Encoding.GetString(EditorP3TextBytes[..Math.Min(EditorP3TextLength, (byte)20)]);
-        set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP3TextBytes);
+        set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorP3TextBytes);
     }
 
     public string EditorBoardText
     {
         get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..Math.Min(EditorBoardTextLength, (byte)20)]);
-        set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorBoardTextBytes);
+        set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorBoardTextBytes);
     }
 
     public string EditorStepText
     {
         get => CodePage437.Encoding.GetString(EditorStepTextBytes[..Math.Min(EditorStepTextLength, (byte)20)]);
-        set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorStepTextBytes);
+        set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorStepTextBytes);
     }
 
     public string EditorCodeText
     {
         get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..Math.Min(EditorCodeTextLength, (byte)20)]);
-        set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCodeTextBytes);
+        set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorCodeTextBytes);
     }
 
     public static ZztElementProperties Read(Stream stream)
@@ -568,49 +568,49 @@ internal partial class SuperZztElementProperties
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), NameBytes);
     }
 
     public string EditorCategoryText
     {
         get => CodePage437.Encoding.GetString(EditorCategoryTextBytes[..Math.Min(EditorCategoryTextLength, (byte)20)]);
-        set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCategoryTextBytes);
+        set => EditorCategoryTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorCategoryTextBytes);
     }
 
     public string EditorP1Text
     {
         get => CodePage437.Encoding.GetString(EditorP1TextBytes[..Math.Min(EditorP1TextLength, (byte)20)]);
-        set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP1TextBytes);
+        set => EditorP1TextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorP1TextBytes);
     }
 
     public string EditorP2Text
     {
         get => CodePage437.Encoding.GetString(EditorP2TextBytes[..Math.Min(EditorP2TextLength, (byte)20)]);
-        set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP2TextBytes);
+        set => EditorP2TextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorP2TextBytes);
     }
 
     public string EditorP3Text
     {
         get => CodePage437.Encoding.GetString(EditorP3TextBytes[..Math.Min(EditorP3TextLength, (byte)20)]);
-        set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorP3TextBytes);
+        set => EditorP3TextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorP3TextBytes);
     }
 
     public string EditorBoardText
     {
         get => CodePage437.Encoding.GetString(EditorBoardTextBytes[..Math.Min(EditorBoardTextLength, (byte)20)]);
-        set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorBoardTextBytes);
+        set => EditorBoardTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorBoardTextBytes);
     }
 
     public string EditorStepText
     {
         get => CodePage437.Encoding.GetString(EditorStepTextBytes[..Math.Min(EditorStepTextLength, (byte)20)]);
-        set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorStepTextBytes);
+        set => EditorStepTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorStepTextBytes);
     }
 
     public string EditorCodeText
     {
         get => CodePage437.Encoding.GetString(EditorCodeTextBytes[..Math.Min(EditorCodeTextLength, (byte)20)]);
-        set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value, EditorCodeTextBytes);
+        set => EditorCodeTextLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), EditorCodeTextBytes);
     }
 
     public static SuperZztElementProperties Read(Stream stream)
@@ -724,7 +724,7 @@ internal partial class ZztWorldHeader
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), NameBytes);
     }
 
     public static ZztWorldHeader Read(Stream stream)
@@ -814,7 +814,7 @@ internal partial class SuperZztWorldHeader
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)20)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), NameBytes);
     }
 
     public static SuperZztWorldHeader Read(Stream stream)
@@ -937,7 +937,7 @@ internal partial struct ZztDatEntry
     public string Name
     {
         get => CodePage437.Encoding.GetString(Bytes[..Math.Min(Length, (byte)50)]);
-        set => Length = (byte)CodePage437.Encoding.GetBytes(value, Bytes);
+        set => Length = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)50)), Bytes);
     }
 
     public static ZztDatEntry Read(Stream stream)
@@ -1192,7 +1192,7 @@ internal partial struct Flag
     public string Text
     {
         get => CodePage437.Encoding.GetString(Bytes[..Math.Min(Length, (byte)20)]);
-        set => Length = (byte)CodePage437.Encoding.GetBytes(value, Bytes);
+        set => Length = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)20)), Bytes);
     }
 
     public static Flag Read(Stream stream)
