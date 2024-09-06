@@ -1,3 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("ZztFormat.Tests")]
+[assembly: InternalsVisibleTo("ZztFormat.Test")]

@@ -147,6 +147,28 @@ string EditorStepTextLength EditorStepTextBytes EditorStepText
 string EditorCodeTextLength EditorCodeTextBytes EditorCodeText
 end
 
+class ZztHighScoreList
+ZztHighScore[30] Scores
+end
+
+struct ZztHighScore
+byte NameLength
+byte[50] NameBytes
+short Score
+string NameLength NameBytes Name
+end
+
+class SuperZztHighScoreList
+SuperZztHighScore[30] Scores
+end
+
+struct SuperZztHighScore
+byte NameLength
+byte[60] NameBytes
+short Score
+string NameLength NameBytes Name
+end
+
 class ZztWorldHeader
 short BoardCount
 short Ammo

@@ -74,7 +74,7 @@ internal static class CodePage437
         while (++lineIndex < structureLines.Length)
         {
             var line = structureLines[lineIndex].Trim();
-            if (line.Length < 1)
+            if (line.Length < 1 || line.StartsWith("#"))
             {
                 continue;
             }
