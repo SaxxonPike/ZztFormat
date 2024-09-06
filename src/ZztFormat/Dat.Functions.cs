@@ -2,7 +2,7 @@ using System.Text;
 
 namespace ZztFormat;
 
-public partial class ZztDat
+public partial class Dat
 {
     /// <summary>
     /// Read a ZZT.DAT archive.
@@ -13,7 +13,7 @@ public partial class ZztDat
     /// <returns>
     /// Archive read from the stream.
     /// </returns>
-    public static ZztDat Read(Stream stream)
+    public static List<Entry> Read(Stream stream)
     {
         // Read the header and extract name/offset data.
 
@@ -28,7 +28,7 @@ public partial class ZztDat
                 entries.Add((header.Entries[i].Name, Offset: header.Offsets[i]));
 
         if (entries.Count < 1)
-            return new ZztDat();
+            return [];
 
         using var tempStream = new MemoryStream();
         header.Write(tempStream);
@@ -89,10 +89,7 @@ public partial class ZztDat
             sb.Clear();
         }
 
-        return new ZztDat
-        {
-            Entries = files
-        };
+        return files;
     }
 
     /// <summary>
@@ -101,12 +98,12 @@ public partial class ZztDat
     /// <param name="stream">
     /// Stream to write the data to.
     /// </param>
-    /// <param name="zztDat">
+    /// <param name="entries">
     /// Archive to write to the stream.
     /// </param>
-    public static void Write(Stream stream, ZztDat zztDat)
+    public static void Write(Stream stream, List<Entry> entries)
     {
-        if (zztDat.Entries.Count > 24)
+        if (entries.Count > 24)
             throw new ZztFormatException(
                 "Archive cannot contain more than 24 files.");
 
@@ -114,10 +111,10 @@ public partial class ZztDat
         var header = new ZztDatHeader();
         var tempStream = new MemoryStream();
 
-        for (var i = 0; i < zztDat.Entries.Count; i++)
+        for (var i = 0; i < entries.Count; i++)
         {
             var offset = (int)(tempStream.Position + ZztDatHeader.Size);
-            using var reader = new StringReader(zztDat.Entries[i].Text);
+            using var reader = new StringReader(entries[i].Text);
             while (true)
             {
                 var line = reader.ReadLine();
@@ -135,12 +132,12 @@ public partial class ZztDat
 
             header.Entries[i] = new ZztDatEntry
             {
-                Name = zztDat.Entries[i].Name
+                Name = entries[i].Name
             };
             header.Offsets[i] = offset;
         }
 
-        header.Count = (short)zztDat.Entries.Count;
+        header.Count = (short)entries.Count;
         header.Write(stream);
         tempStream.Position = 0;
         tempStream.CopyTo(stream);

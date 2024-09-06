@@ -6,7 +6,7 @@ namespace ZztFormat;
 /// A .DAT format archive.
 /// </summary>
 [PublicAPI]
-public partial class ZztDat
+public partial class Dat
 {
     /// <summary>
     /// A single file in a .DAT archive.
@@ -18,9 +18,4 @@ public partial class ZztDat
     /// Text content of the file.
     /// </param>
     public record struct Entry(string Name, string Text);
-
-    /// <summary>
-    /// Entries stored within the archive.
-    /// </summary>
-    public List<Entry> Entries { get; set; } = [];
 }

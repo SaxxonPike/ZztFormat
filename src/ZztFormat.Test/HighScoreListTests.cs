@@ -12,7 +12,7 @@ public class HighScoreListTests
         var inStream = File.OpenRead(Path.Combine(TestPaths.Files, fileName));
         var list = HighScoreList.Read(inStream, worldType);
 
-        Assert.That(list.Scores, Is.EquivalentTo(new List<HighScoreList.Entry>
+        Assert.That(list, Is.EquivalentTo(new List<HighScoreList.Entry>
         {
             new() { Name = "Tim Sweeney", Score = 14690 },
             new() { Name = "Neil Tender", Score = 12783 }
@@ -27,27 +27,25 @@ public class HighScoreListTests
         var (expectedBytes, scoreLength) = worldType switch
         {
             WorldType.Zzt => (new byte[ZztHighScoreList.Size], ZztHighScore.Size),
-            WorldType.SuperZzt => (new byte[SuperZztHighScoreList.Size], SuperZztHighScore.Size)
+            WorldType.SuperZzt => (new byte[SuperZztHighScoreList.Size], SuperZztHighScore.Size),
+            _ => throw new Exception("Invalid world type.")
         };
 
         var outStream = new MemoryStream();
-        var list = new HighScoreList
+        var list = new List<HighScoreList.Entry>
         {
-            Scores =
-            [
-                new() { Name = "Saxxon Fox", Score = 420 },
-                new() { Name = "Noxxas Xof", Score = 69 }
-            ]
+            new() { Name = "Saxxon Fox", Score = 420 },
+            new() { Name = "Noxxas Xof", Score = 69 }
         };
 
         for (int i = 0, j = 0; i < 30; i++, j += scoreLength)
         {
-            if (i < list.Scores.Count)
+            if (i < list.Count)
             {
-                expectedBytes[j] = (byte)list.Scores[i].Name.Length;
-                CodePage437.Encoding.GetBytes(list.Scores[i].Name, expectedBytes.AsSpan(j + 1));
+                expectedBytes[j] = (byte)list[i].Name.Length;
+                CodePage437.Encoding.GetBytes(list[i].Name, expectedBytes.AsSpan(j + 1));
                 BinaryPrimitives.WriteInt16LittleEndian(expectedBytes.AsSpan(j + scoreLength - 4),
-                    (short)list.Scores[i].Score);
+                    (short)list[i].Score);
             }
             else
             {

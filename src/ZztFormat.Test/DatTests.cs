@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace ZztFormat.Test;
 
 [TestFixture]
-public class ZztDatTests
+public class DatTests
 {
     [Test]
     public void Read_ShouldReturnCorrectData()
@@ -28,28 +28,25 @@ public class ZztDatTests
 
         // Act.
 
-        var zztDat = ZztDat.Read(inStream);
+        var entries = Dat.Read(inStream);
 
         // Assert.
 
-        Assert.That(zztDat.Entries.Select(x => x.Name),
+        Assert.That(entries.Select(x => x.Name),
             Is.EquivalentTo(expectedFileNames));
     }
 
     [Test]
     public void Write_ShouldFailWhenTooManyFiles()
     {
-        var dat = new ZztDat
-        {
-            Entries = Enumerable
-                .Range(0, 25)
-                .Select(_ => new ZztDat.Entry())
-                .ToList()
-        };
+        var entries = Enumerable
+            .Range(0, 25)
+            .Select(_ => new Dat.Entry())
+            .ToList();
 
         var stream = new MemoryStream();
-        
-        Assert.That(() => ZztDat.Write(stream, dat), 
+
+        Assert.That(() => Dat.Write(stream, entries),
             Throws.TypeOf<ZztFormatException>());
     }
 
@@ -58,7 +55,7 @@ public class ZztDatTests
     {
         // Arrange: expected data.
 
-        var entries = new List<ZztDat.Entry>
+        var entries = new List<Dat.Entry>
         {
             new("ABC.DEF", "ghi"),
             new("123.456", "789")
@@ -98,18 +95,17 @@ public class ZztDatTests
 
         // Arrange: input/output objects.
 
-        var dat = new ZztDat { Entries = entries };
         var outStream = new MemoryStream();
 
         // Act.
 
-        ZztDat.Write(outStream, dat);
+        Dat.Write(outStream, entries);
         outStream.Flush();
 
         // Assert.
 
         var observed = outStream.ToArray();
-        Assert.That(observed, 
+        Assert.That(observed,
             Is.EquivalentTo(expected));
     }
 }

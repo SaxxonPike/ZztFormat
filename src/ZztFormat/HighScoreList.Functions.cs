@@ -1,8 +1,8 @@
 namespace ZztFormat;
 
-public partial class HighScoreList
+public static partial class HighScoreList
 {
-    public static HighScoreList Read(Stream stream, WorldType worldType) =>
+    public static List<Entry> Read(Stream stream, WorldType worldType) =>
         worldType switch
         {
             WorldType.Zzt => ReadZztHighScoreList(stream),
@@ -11,7 +11,7 @@ public partial class HighScoreList
                 $"Unknown world type {worldType}.")
         };
 
-    internal static HighScoreList ReadZztHighScoreList(Stream stream)
+    internal static List<Entry> ReadZztHighScoreList(Stream stream)
     {
         var result = new List<Entry>();
         var data = ZztHighScoreList.Read(stream);
@@ -28,13 +28,10 @@ public partial class HighScoreList
             });
         }
 
-        return new HighScoreList
-        {
-            Scores = result,
-        };
+        return result;
     }
 
-    internal static HighScoreList ReadSuperZztHighScoreList(Stream stream)
+    internal static List<Entry> ReadSuperZztHighScoreList(Stream stream)
     {
         var result = new List<Entry>();
         var data = SuperZztHighScoreList.Read(stream);
@@ -51,13 +48,10 @@ public partial class HighScoreList
             });
         }
 
-        return new HighScoreList
-        {
-            Scores = result,
-        };
+        return result;
     }
 
-    public static void Write(Stream stream, WorldType worldType, HighScoreList list)
+    public static void Write(Stream stream, WorldType worldType, List<Entry> list)
     {
         switch (worldType)
         {
@@ -73,15 +67,15 @@ public partial class HighScoreList
         }
     }
 
-    internal static void WriteZztHighScoreList(Stream stream, HighScoreList list)
+    internal static void WriteZztHighScoreList(Stream stream, List<Entry> list)
     {
         var result = new ZztHighScoreList();
         for (var i = 0; i < result.Scores.Length; i++)
-            result.Scores[i] = i < list.Scores.Count
+            result.Scores[i] = i < list.Count
                 ? new ZztHighScore
                 {
-                    Name = list.Scores[i].Name,
-                    Score = (short)list.Scores[i].Score
+                    Name = list[i].Name,
+                    Score = (short)list[i].Score
                 }
                 : new ZztHighScore
                 {
@@ -92,15 +86,15 @@ public partial class HighScoreList
         result.Write(stream);
     }
 
-    internal static void WriteSuperZztHighScoreList(Stream stream, HighScoreList list)
+    internal static void WriteSuperZztHighScoreList(Stream stream, List<Entry> list)
     {
         var result = new SuperZztHighScoreList();
         for (var i = 0; i < result.Scores.Length; i++)
-            result.Scores[i] = i < list.Scores.Count
+            result.Scores[i] = i < list.Count
                 ? new SuperZztHighScore
                 {
-                    Name = list.Scores[i].Name,
-                    Score = (short)list.Scores[i].Score
+                    Name = list[i].Name,
+                    Score = (short)list[i].Score
                 }
                 : new SuperZztHighScore
                 {
