@@ -2,8 +2,14 @@ using System.Buffers.Binary;
 
 namespace ZztFormat;
 
-public partial class World
+public partial class World(WorldType worldType)
 {
+    /// <summary>
+    /// World type ID. This will be -1 for ZZT worlds, and -2 for Super ZZT
+    /// worlds. By default, this will be <see cref="WorldType.Zzt"/>.
+    /// </summary>
+    public WorldType Type { get; } = worldType;
+
     /// <summary>
     /// Creates a blank <see cref="World"/> with one title screen
     /// <see cref="Board"/> and typical defaults.
@@ -29,22 +35,22 @@ public partial class World
     /// <summary>
     /// Create a blank ZZT world.
     /// </summary>
-    internal static World CreateZztWorld() =>
-        new()
-        {
-            Type = WorldType.Zzt,
-            Boards = [Board.Create(WorldType.Zzt)]
-        };
+    internal static World CreateZztWorld()
+    {
+        var world = new World(WorldType.Zzt);
+        world.Boards.Add(Board.Create(WorldType.Zzt));
+        return world;
+    }
 
     /// <summary>
     /// Create a blank Super ZZT world.
     /// </summary>
-    internal static World CreateSuperZztWorld() =>
-        new()
-        {
-            Type = WorldType.SuperZzt,
-            Boards = [Board.Create(WorldType.Zzt)]
-        };
+    internal static World CreateSuperZztWorld()
+    {
+        var world = new World(WorldType.SuperZzt);
+        world.Boards.Add(Board.Create(WorldType.SuperZzt));
+        return world;
+    }
 
     /// <summary>
     /// Reads a <see cref="World"/> from a <see cref="Stream"/>.
@@ -72,8 +78,8 @@ public partial class World
 
         return type switch
         {
-            -1 => ReadZztWorld(stream),
-            -2 => ReadSuperZztWorld(stream),
+            -1 => ReadZztWorld(stream, options),
+            -2 => ReadSuperZztWorld(stream, options),
             _ => throw new ZztFormatException(
                 $"Unknown world type {type}.")
         };
@@ -94,9 +100,19 @@ public partial class World
     /// <summary>
     /// Deserializes world flags.
     /// </summary>
-    internal static List<string> ConvertFlags(ReadOnlySpan<Flag> flags)
+    internal static FlagList ConvertFlags(ReadOnlySpan<Flag> flags, ReadOptions options)
     {
-        var result = new List<string>();
+        var result = new FlagList();
+
+        if (options.HasFlag(ReadOptions.CaseSensitiveFlags))
+            result.Options |= FlagOptions.CaseSensitive;
+
+        if (options.HasFlag(ReadOptions.PreserveFlagCase))
+            result.Options |= FlagOptions.PreserveCase;
+
+        if (options.HasFlag(ReadOptions.AllowDuplicateFlags))
+            result.Options |= FlagOptions.AllowDuplicates;
+
         for (var i = 0; i < flags.Length; i++)
             if (flags[i].Length > 0)
                 result.Add(flags[i].Text);
@@ -107,17 +123,12 @@ public partial class World
     /// Deserializes a ZZT world.
     /// The world type should already have been read before calling this.
     /// </summary>
-    internal static World ReadZztWorld(Stream stream)
+    internal static World ReadZztWorld(Stream stream, ReadOptions options)
     {
         var header = ZztWorldHeader.Read(stream);
 
-        var boards = new List<Board>();
-        for (var i = 0; i <= header.BoardCount; i++)
-            boards.Add(Board.Read(stream, WorldType.Zzt));
-
-        return new World
+        var world = new World(WorldType.Zzt)
         {
-            Type = WorldType.Zzt,
             Ammo = header.Ammo,
             Gems = header.Gems,
             Keys = ConvertKeys(header.Keys),
@@ -128,28 +139,27 @@ public partial class World
             EnergyCycles = header.EnergyCycles,
             Score = header.Score,
             Name = header.Name,
-            Flags = ConvertFlags(header.Flags),
+            Flags = ConvertFlags(header.Flags, options),
             TimePassed = header.TimePassed.ToTimeSpan(),
-            Locked = header.Locked != 0,
-            Boards = boards
+            Locked = header.Locked != 0
         };
+
+        for (var i = 0; i <= header.BoardCount; i++)
+            world.Boards.Add(Board.Read(stream, WorldType.Zzt));
+
+        return world;
     }
 
     /// <summary>
     /// Deserializes a Super ZZT world.
     /// The world type should already have been read before calling this.
     /// </summary>
-    internal static World ReadSuperZztWorld(Stream stream)
+    internal static World ReadSuperZztWorld(Stream stream, ReadOptions options)
     {
         var header = SuperZztWorldHeader.Read(stream);
 
-        var boards = new List<Board>();
-        for (var i = 0; i <= header.BoardCount; i++)
-            boards.Add(Board.Read(stream, WorldType.SuperZzt));
-
-        return new World
+        var world = new World(WorldType.SuperZzt)
         {
-            Type = WorldType.SuperZzt,
             Ammo = header.Ammo,
             Gems = header.Gems,
             Keys = ConvertKeys(header.Keys),
@@ -158,12 +168,16 @@ public partial class World
             EnergyCycles = header.EnergyCycles,
             Score = header.Score,
             Name = header.Name,
-            Flags = ConvertFlags(header.Flags),
+            Flags = ConvertFlags(header.Flags, options),
             TimePassed = header.TimePassed.ToTimeSpan(),
             Locked = header.Locked != 0,
-            Stones = header.Stones,
-            Boards = boards
+            Stones = header.Stones
         };
+
+        for (var i = 0; i <= header.BoardCount; i++)
+            world.Boards.Add(Board.Read(stream, WorldType.SuperZzt));
+
+        return world;
     }
 
     /// <summary>
@@ -180,12 +194,12 @@ public partial class World
     /// <summary>
     /// Serialize world flags.
     /// </summary>
-    internal static Flag[] ConvertFlags(List<string> flags, int length)
+    internal static Flag[] ConvertFlags(FlagList flags, int length)
     {
         var result = new Flag[length];
         for (var i = 0; i < length; i++)
             result[i] = new Flag();
-        
+
         var index = 0;
         foreach (var flag in flags)
             result[index++].Text = flag;
@@ -215,7 +229,7 @@ public partial class World
         Span<byte> lenBuf = stackalloc byte[2];
         BinaryPrimitives.WriteInt16LittleEndian(lenBuf, (short)world.Type);
         stream.Write(lenBuf);
-        
+
         switch (world.Type)
         {
             case WorldType.Zzt:

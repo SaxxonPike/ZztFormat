@@ -15,19 +15,19 @@ public partial class Element
             _ => Color,
         };
 
-    public static Element? Get(int worldType, int elementId) =>
+    public static Element? Get(WorldType worldType, int elementId) =>
         worldType switch
         {
-            -1 => GetZztElement(elementId),
-            -2 => GetSuperZztElement(elementId),
+            WorldType.Zzt => GetZztElement(elementId),
+            WorldType.SuperZzt => GetSuperZztElement(elementId),
             _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 
-    public static Element? Get(int worldType, ElementType element) =>
+    public static Element? Get(WorldType worldType, ElementType element) =>
         worldType switch
         {
-            -1 => Get(-1, ElementList.UnmapZztElement(element)),
-            -2 => Get(-2, ElementList.UnmapSuperZztElement(element)),
+            WorldType.Zzt => Get(WorldType.Zzt, ElementList.UnmapZztElement(element)),
+            WorldType.SuperZzt => Get(WorldType.SuperZzt, ElementList.UnmapSuperZztElement(element)),
             _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 

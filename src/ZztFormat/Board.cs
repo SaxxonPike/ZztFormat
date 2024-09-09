@@ -65,7 +65,7 @@ public partial class Board
     /// <summary>
     /// Objects on the board that have special or scripted behavior.
     /// </summary>
-    public List<Actor> Actors { get; set; } = [];
+    public ActorList Actors { get; set; } = new(worldType);
 
     /// <summary>
     /// Dimensions of the board.
