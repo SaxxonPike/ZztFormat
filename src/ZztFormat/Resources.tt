@@ -57,10 +57,11 @@ namespace ZztFormat;
     string BuildInlinedFile(string name, string fileName)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"    private static Lazy<byte[]> _raw{name} = new(() => new byte[]");
+        sb.AppendLine($"    private static Lazy<byte[]> _raw{name} = new(() => Decompress(new byte[]");
         sb.AppendLine("    {");
-        sb.AppendLine(FormatBytes(Compress(IncludeInline(fileName))));
-        sb.AppendLine("    });");
+        var bytes = IncludeInline(fileName);
+        sb.AppendLine(FormatBytes(Compress(bytes)));
+        sb.AppendLine($"    }}, 0x{bytes.Length:X}));");
         sb.AppendLine();
         sb.AppendLine($"    public static ReadOnlySpan<byte> {name} => _raw{name}.Value;");
         return sb.ToString();
@@ -70,12 +71,15 @@ namespace ZztFormat;
 [PublicAPI]
 internal static class Resources
 {
-    private static byte[] Decompress(byte[] compressed)
+    private static byte[] Decompress(byte[] compressed, int decompressedSize)
     {
+        Span<byte> decompressed = stackalloc byte[decompressedSize];
         using var mem = new MemoryStream(compressed);
         using var decomp = new GZipStream(mem, CompressionMode.Decompress);
         using var result = new MemoryStream();
-        decomp.CopyTo(result);
+        decomp.ReadExactly(decompressed);
+        result.Write(decompressed);
+        result.Flush();
         return result.ToArray();
     }
 

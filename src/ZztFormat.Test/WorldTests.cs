@@ -74,6 +74,7 @@ public class WorldTests
     public void TestWorldSaveFlags(WorldType type)
     {
         var flag = Testing.Random.GetString();
+        var expected = flag.ToUpper();
         var world = World.Create(type);
         world.Flags.Add(flag);
 
@@ -84,7 +85,7 @@ public class WorldTests
         stream.Position = 0;
 
         var readBack = World.Read(stream);
-        Assert.That(readBack.Flags, Contains.Item(flag[..20]));
+        Assert.That(readBack.Flags, Contains.Item(expected[..20]));
     }
 
     [Test]

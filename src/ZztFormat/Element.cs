@@ -11,13 +11,13 @@ public partial class Element
     /// <summary>
     /// Index# of the element.
     /// </summary>
-    public int Id { get; set; }
+    public int Id { get; init; }
 
     /// <summary>
     /// Known mapping for the element. This will be
     /// <see cref="ElementType.Unknown"/> for elements that are undefined.
     /// </summary>
-    public ElementType Type { get; set; }
+    public ElementType Type { get; init; }
 
     /// <summary>
     /// If no special draw function is specified, this is the character

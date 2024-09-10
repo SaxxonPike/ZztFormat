@@ -3,7 +3,7 @@ using static System.Buffers.Binary.BinaryPrimitives;
 
 namespace ZztFormat;
 
-public partial class Board
+public partial class Board(WorldType worldType)
 {
     private const int ZztBoardWidth = 60;
     private const int ZztBoardHeight = 25;
@@ -14,24 +14,64 @@ public partial class Board
     private const int SuperZztBoardTileCount = SuperZztBoardWidth * SuperZztBoardHeight;
     private const int SuperZztActorCount = 129;
 
+    /// <summary>
+    /// World type associated with this board.
+    /// </summary>
+    public WorldType WorldType { get; } = worldType;
+
+    /// <summary>
+    /// Gets or sets the tile at the specified coordinates. These coordinates match
+    /// in-game coordinates: the upper-left corner is (X = 1, Y = 1).
+    /// </summary>
+    /// <param name="x">
+    /// X coordinate of the tile.
+    /// </param>
+    /// <param name="y">
+    /// Y coordinate of the tile.
+    /// </param>
     public Tile this[int x, int y]
     {
         get => Tiles[(y - 1) * Width + (x - 1)];
         set => Tiles[(y - 1) * Width + (x - 1)] = value;
     }
 
+    /// <summary>
+    /// Gets or sets the width of the board. This also assigns the
+    /// <see cref="Size"/> property.
+    /// </summary>
     public int Width
     {
         get => Size.X;
         set => Size = Size with { X = value };
     }
 
+    /// <summary>
+    /// Gets or sets the height of the board. This also assigns the
+    /// <see cref="Size"/> property.
+    /// </summary>
     public int Height
     {
         get => Size.Y;
         set => Size = Size with { Y = value };
     }
 
+    /// <summary>
+    /// Creates a new board with the specified world type, with sensible
+    /// defaults: empty board with one Tile and Actor for the player.
+    /// </summary>
+    /// <param name="worldType">
+    /// World type to create the board with. This impacts board size and
+    /// other initialization.
+    /// </param>
+    /// <returns>
+    /// The created board.
+    /// </returns>
+    /// <exception cref="ZztFormatException">
+    /// The world type is not valid.
+    /// </exception>
+    /// <remarks>
+    /// A blank <see cref="World"/> is created to be the parent.
+    /// </remarks>
     public static Board Create(WorldType worldType) =>
         worldType switch
         {
@@ -41,58 +81,90 @@ public partial class Board
                 $"Unknown world type {worldType}.")
         };
 
+    /// <summary>
+    /// Creates a default board for ZZT.
+    /// </summary>
     internal static Board CreateZztBoard()
     {
         var center = new Vec2(
             ZztBoardWidth / 2 + 1,
             ZztBoardHeight / 2 + 1);
 
-        var player = new Actor
-        {
-            Position = center,
-            Cycle = 1
-        };
-
-        return new Board
+        var board = new Board(WorldType.Zzt)
         {
             Tiles = new Tile[ZztBoardTileCount],
             Enter = center,
             Size = new Vec2(ZztBoardWidth, ZztBoardHeight),
-            Actors = [player],
             [center.X, center.Y] = new()
             {
                 Element = 0x04,
                 Color = 0x1F
             }
         };
+
+        var player = new Actor(WorldType.Zzt)
+        {
+            Position = center,
+            Cycle = 1
+        };
+
+        board.Actors.Add(player);
+        return board;
     }
 
+    /// <summary>
+    /// Creates a default board for Super ZZT.
+    /// </summary>
     internal static Board CreateSuperZztBoard()
     {
         var center = new Vec2(
             SuperZztBoardWidth / 2 + 1,
             SuperZztBoardHeight / 2 + 1);
 
-        var player = new Actor
-        {
-            Position = center,
-            Cycle = 1
-        };
-
-        return new Board
+        var board = new Board(WorldType.SuperZzt)
         {
             Tiles = new Tile[SuperZztBoardTileCount],
             Enter = center,
             Size = new Vec2(SuperZztBoardWidth, SuperZztBoardHeight),
-            Actors = [player],
             [center.X, center.Y] = new()
             {
                 Element = 0x04,
                 Color = 0x1F
             }
         };
+
+        var player = new Actor(WorldType.SuperZzt)
+        {
+            Position = center,
+            Cycle = 1
+        };
+
+        board.Actors.Add(player);
+        return board;
     }
 
+    /// <summary>
+    /// Reads a board from a <see cref="Stream"/>.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream where the board data will be read from.
+    /// </param>
+    /// <param name="worldType">
+    /// World type associated with the board.
+    /// </param>
+    /// <param name="options">
+    /// Additional loading options.
+    /// </param>
+    /// <returns>
+    /// The loaded board.
+    /// </returns>
+    /// <exception cref="ZztFormatException">
+    /// The world type is invalid, or a corrupt board was found with the
+    /// <see cref="ReadOptions.ThrowOnCorruptBoards"/> option specified.
+    /// </exception>
+    /// <remarks>
+    /// A blank <see cref="World"/> is created to be the parent.
+    /// </remarks>
     public static Board Read(Stream stream, WorldType worldType, ReadOptions options = default)
     {
         byte[]? boardBuf = default;
@@ -123,15 +195,16 @@ public partial class Board
 
                 if (!options.HasFlag(ReadOptions.KeepCorruptBoards))
                 {
-                    return Create(worldType);
+                    board = Create(worldType);
+                    return board;
                 }
-                
+
                 // The board data needs to be duplicated in order to be
                 // able to free the temporary board memory. We still grab
                 // the board name when available, because it is a fixed offset
                 // from the beginning of the data.
 
-                return new Board
+                board = new Board(worldType)
                 {
                     Name = worldType switch
                     {
@@ -157,6 +230,9 @@ public partial class Board
         }
     }
 
+    /// <summary>
+    /// Deserialize exit bytes.
+    /// </summary>
     internal static Dictionary<ExitDirection, int> ConvertExits(ReadOnlySpan<byte> exits)
     {
         var result = new Dictionary<ExitDirection, int>();
@@ -165,6 +241,9 @@ public partial class Board
         return result;
     }
 
+    /// <summary>
+    /// Deserialize tiles.
+    /// </summary>
     internal static Tile[] ConvertTiles(ReadOnlySpan<RawTile> tiles)
     {
         var result = new Tile[tiles.Length];
@@ -173,6 +252,15 @@ public partial class Board
         return result;
     }
 
+    /// <summary>
+    /// Read a ZZT board.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream from which the board data will be read.
+    /// </param>
+    /// <returns>
+    /// The loaded board.
+    /// </returns>
     internal static Board? ReadZztBoard(Stream stream)
     {
         Span<RawTile> tiles = stackalloc RawTile[ZztBoardTileCount];
@@ -183,11 +271,7 @@ public partial class Board
 
         var info = ZztBoardInfo.Read(stream);
 
-        var actors = new List<Actor>();
-        for (var i = 0; i <= info.ActorCount; i++)
-            actors.Add(ReadZztActor(stream));
-
-        return new Board
+        var board = new Board(WorldType.Zzt)
         {
             Size = new Vec2(ZztBoardWidth, ZztBoardHeight),
             Name = header.Name,
@@ -198,11 +282,24 @@ public partial class Board
             RestartOnZap = info.RestartOnZapBit != 0,
             Message = info.Message,
             Enter = Vec2.FromRawPosition(info.Enter),
-            TimeLimit = TimeSpan.FromSeconds(info.TimeLimit),
-            Actors = actors
+            TimeLimit = TimeSpan.FromSeconds(info.TimeLimit)
         };
+
+        for (var i = 0; i <= info.ActorCount; i++)
+            board.Actors.Add(ReadZztActor(stream));
+
+        return board;
     }
 
+    /// <summary>
+    /// Read a Super ZZT board.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream from which the board data will be read.
+    /// </param>
+    /// <returns>
+    /// The loaded board.
+    /// </returns>
     internal static Board? ReadSuperZztBoard(Stream stream)
     {
         Span<RawTile> tiles = stackalloc RawTile[SuperZztBoardTileCount];
@@ -213,11 +310,7 @@ public partial class Board
 
         var info = SuperZztBoardInfo.Read(stream);
 
-        var actors = new List<Actor>();
-        for (var i = 0; i <= info.ActorCount; i++)
-            actors.Add(ReadSuperZztActor(stream));
-
-        return new Board
+        var board = new Board(WorldType.SuperZzt)
         {
             Size = new Vec2(SuperZztBoardWidth, SuperZztBoardHeight),
             Name = header.Name,
@@ -227,11 +320,27 @@ public partial class Board
             RestartOnZap = info.RestartOnZapBit != 0,
             Enter = Vec2.FromRawPosition(info.Enter),
             TimeLimit = TimeSpan.FromSeconds(info.TimeLimit),
-            Camera = Vec2.FromRawVector(info.Camera),
-            Actors = actors
+            Camera = Vec2.FromRawVector(info.Camera)
         };
+
+        for (var i = 0; i <= info.ActorCount; i++)
+            board.Actors.Add(ReadSuperZztActor(stream));
+
+        return board;
     }
 
+    /// <summary>
+    /// Deserialize Actor script.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream from which the script data will be read.
+    /// </param>
+    /// <param name="length">
+    /// Length value from the Actor record.
+    /// </param>
+    /// <returns>
+    /// Char[] representation of the script.
+    /// </returns>
     internal static char[] ConvertScript(Stream stream, int length)
     {
         if (length < 1)
@@ -247,6 +356,9 @@ public partial class Board
         return chars;
     }
 
+    /// <summary>
+    /// Deserialize P1/P2/P3.
+    /// </summary>
     internal static int[] ConvertParameters(ReadOnlySpan<byte> parameters)
     {
         var result = new int[parameters.Length];
@@ -255,12 +367,21 @@ public partial class Board
         return result;
     }
 
+    /// <summary>
+    /// Reads an actor from a <see cref="Stream"/> in the ZZT format.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream from which the actor data will be read.
+    /// </param>
+    /// <returns>
+    /// The loaded actor.
+    /// </returns>
     internal static Actor ReadZztActor(Stream stream)
     {
         var info = ZztActor.Read(stream);
         var script = ConvertScript(stream, info.Length);
 
-        return new Actor
+        return new Actor(WorldType.Zzt)
         {
             Position = Vec2.FromRawPosition(info.Position),
             Step = Vec2.FromRawVector(info.Step),
@@ -274,12 +395,21 @@ public partial class Board
         };
     }
 
+    /// <summary>
+    /// Reads an actor from a <see cref="Stream"/> in the Super ZZT format.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream from which the actor data will be read.
+    /// </param>
+    /// <returns>
+    /// The loaded actor.
+    /// </returns>
     internal static Actor ReadSuperZztActor(Stream stream)
     {
         var info = SuperZztActor.Read(stream);
         var script = ConvertScript(stream, info.Length);
 
-        return new Actor
+        return new Actor(WorldType.SuperZzt)
         {
             Position = Vec2.FromRawPosition(info.Position),
             Step = Vec2.FromRawVector(info.Step),
@@ -293,6 +423,22 @@ public partial class Board
         };
     }
 
+    /// <summary>
+    /// Writes a board to a <see cref="Stream"/>.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream to which the board data will be written.
+    /// </param>
+    /// <param name="worldType">
+    /// World type associated with the board data.
+    /// </param>
+    /// <param name="board">
+    /// Board data to write.
+    /// </param>
+    /// <exception cref="ZztFormatException">
+    /// World type is invalid, or the actor list does not contain the minimum
+    /// required number of actors (one.)
+    /// </exception>
     public static void Write(Stream stream, WorldType worldType, Board board)
     {
         if (board.Actors.Count < 1)
@@ -313,6 +459,9 @@ public partial class Board
         }
     }
 
+    /// <summary>
+    /// Serialize board exits.
+    /// </summary>
     internal static byte[] ConvertExits(IReadOnlyDictionary<ExitDirection, int> exits, int length)
     {
         var result = new byte[length];
@@ -321,6 +470,9 @@ public partial class Board
         return result;
     }
 
+    /// <summary>
+    /// Serialize tiles.
+    /// </summary>
     internal static RawTile[] ConvertTiles(ReadOnlySpan<Tile> tiles)
     {
         var result = new RawTile[tiles.Length];
@@ -329,6 +481,15 @@ public partial class Board
         return result;
     }
 
+    /// <summary>
+    /// Determine actor script bindings.
+    /// </summary>
+    /// <param name="actors">
+    /// Actors for which to find binding values for.
+    /// </param>
+    /// <returns>
+    /// A dictionary that maps an actor to its bound actor index.
+    /// </returns>
     internal static Dictionary<Actor, int> ConvertActorBindings(IEnumerable<Actor> actors)
     {
         var index = 0;
@@ -346,13 +507,22 @@ public partial class Board
             {
                 result.TryAdd(actor, 0);
             }
-            
+
             index++;
         }
 
         return result;
     }
 
+    /// <summary>
+    /// Writes a board to a <see cref="Stream"/> in ZZT format.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream to which the board data will be written.
+    /// </param>
+    /// <param name="board">
+    /// Board data to write.
+    /// </param>
     internal static void WriteZztBoard(Stream stream, Board board)
     {
         var dataStream = new MemoryStream();
@@ -388,6 +558,15 @@ public partial class Board
         dataStream.CopyTo(stream);
     }
 
+    /// <summary>
+    /// Writes a board to a <see cref="Stream"/> in Super ZZT format.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream to which the board data will be written.
+    /// </param>
+    /// <param name="board">
+    /// Board data to write.
+    /// </param>
     internal static void WriteSuperZztBoard(Stream stream, Board board)
     {
         var dataStream = new MemoryStream();
@@ -422,6 +601,9 @@ public partial class Board
         dataStream.CopyTo(stream);
     }
 
+    /// <summary>
+    /// Serialize P1/P2/P3.
+    /// </summary>
     internal static byte[] ConvertParameters(ReadOnlySpan<int> parameters)
     {
         var result = new byte[parameters.Length];
@@ -430,15 +612,35 @@ public partial class Board
         return result;
     }
 
+    /// <summary>
+    /// Serialize actor script.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream to which the script data will be written.
+    /// </param>
+    /// <param name="script">
+    /// Script data to write.
+    /// </param>
     internal static void ConvertScript(Stream stream, ReadOnlySpan<char> script)
     {
         // var length = CodePage437.Encoding.GetByteCount(script);
         Span<byte> buf = stackalloc byte[script.Length];
         CodePage437.Encoding.GetBytes(script, buf);
         stream.Write(buf);
-        // return length;
     }
 
+    /// <summary>
+    /// Write an actor to a <see cref="Stream"/> in ZZT format.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream to which the actor data will be written.
+    /// </param>
+    /// <param name="bind">
+    /// Index of the actor to bind to.
+    /// </param>
+    /// <param name="actor">
+    /// Actor that will be written.
+    /// </param>
     internal static void WriteZztActor(Stream stream, int bind, Actor actor)
     {
         var info = new ZztActor
@@ -459,6 +661,18 @@ public partial class Board
             ConvertScript(stream, actor.Script);
     }
 
+    /// <summary>
+    /// Write an actor to a <see cref="Stream"/> in Super ZZT format.
+    /// </summary>
+    /// <param name="stream">
+    /// Stream to which the actor data will be written.
+    /// </param>
+    /// <param name="bind">
+    /// Index of the actor to bind to.
+    /// </param>
+    /// <param name="actor">
+    /// Actor that will be written.
+    /// </param>
     internal static void WriteSuperZztActor(Stream stream, int bind, Actor actor)
     {
         var info = new ZztActor
@@ -477,5 +691,165 @@ public partial class Board
         info.Write(stream);
         if (info.Length > 0)
             ConvertScript(stream, actor.Script);
+    }
+
+    /// <summary>
+    /// Binds an actor's script to another actor.
+    /// </summary>
+    /// <param name="binder">
+    /// Actor that will be bound to another.
+    /// </param>
+    /// <param name="owner">
+    /// Actor that has the script to bind to.
+    /// </param>
+    /// <exception cref="ZztFormatException">
+    /// The actor was not found in <see cref="Actors"/>.
+    /// </exception>
+    public void BindScript(Actor binder, Actor owner)
+    {
+        var ownerIndex = Actors.IndexOf(owner);
+        if (ownerIndex < 0)
+            throw new ZztFormatException("Owner actor was not found in the actor list.");
+
+        binder.Bind = -ownerIndex;
+        binder.Script = owner.Script;
+    }
+
+    /// <summary>
+    /// Sets two actors' leader/follower values accordingly.
+    /// </summary>
+    /// <param name="leader">
+    /// Actor that will receive the new <see cref="Actor.Follower"/> value.
+    /// </param>
+    /// <param name="follower">
+    /// Actor that will receive the new <see cref="Actor.Leader"/> value.
+    /// </param>
+    /// <exception cref="ZztFormatException">
+    /// The actor was not found in <see cref="Actors"/>.
+    /// </exception>
+    public void SetLeaderFollower(Actor leader, Actor follower)
+    {
+        var leaderIndex = Actors.IndexOf(leader);
+        if (leaderIndex < 0)
+            throw new ZztFormatException("Leader actor was not found in the actor list.");
+
+        var followerIndex = Actors.IndexOf(follower);
+        if (followerIndex < 0)
+            throw new ZztFormatException("Follower actor was not found in the actor list.");
+
+        leader.Follower = followerIndex;
+        follower.Leader = leaderIndex;
+    }
+
+    /// <summary>
+    /// After adding a board, fix board exit and passage links.
+    /// </summary>
+    /// <param name="addedIndex">
+    /// Board index of the board that was added.
+    /// </param>
+    /// <param name="worldType">
+    /// World type associated with the board.
+    /// </param>
+    internal void FixRefsAfterAdd(int addedIndex)
+    {
+        // Fix board links.
+
+        var exitsToChange = new Dictionary<ExitDirection, int>();
+
+        foreach (var (direction, target) in Exits)
+            if (target >= addedIndex)
+                exitsToChange.Add(direction, target + 1);
+
+        foreach (var (direction, newTarget) in exitsToChange)
+            Exits[direction] = newTarget;
+
+        // Fix passage links.
+
+        var passageId = WorldType switch
+        {
+            WorldType.Zzt => ElementList.UnmapZztElement(ElementType.Passage),
+            WorldType.SuperZzt => ElementList.UnmapSuperZztElement(ElementType.Passage),
+            _ => -1
+        };
+
+        if (passageId < 0)
+            return;
+
+        for (var i = 0; i < Tiles.Length; i++)
+        {
+            if (Tiles[i].Element != passageId)
+                continue;
+
+            var x = i % Width + 1;
+            var y = i / Width + 1;
+
+            foreach (var actor in Actors)
+            {
+                if (actor.Position.X != x || actor.Position.Y != y)
+                    continue;
+
+                var p2 = actor.Parameters[2];
+                if (p2 >= addedIndex)
+                    actor.Parameters[2] = p2 + 1;
+            }
+        }
+    }
+
+    /// <summary>
+    /// After removing a board, fix board exit and passage links.
+    /// </summary>
+    /// <param name="removedIndex">
+    /// Board index of the board that was removed.
+    /// </param>
+    internal void FixRefsBeforeRemove(int removedIndex)
+    {
+        // Fix board links.
+
+        var exitsToChange = new Dictionary<ExitDirection, int>();
+
+        foreach (var (direction, target) in Exits)
+            if (target > removedIndex)
+                exitsToChange.Add(direction, target - 1);
+            else if (target == removedIndex)
+                exitsToChange.Add(direction, -1);
+
+        foreach (var (direction, newTarget) in exitsToChange)
+            if (newTarget >= 0)
+                Exits[direction] = newTarget;
+            else
+                Exits.Remove(direction);
+
+        // Fix passage links.
+
+        var passageId = WorldType switch
+        {
+            WorldType.Zzt => ElementList.UnmapZztElement(ElementType.Passage),
+            WorldType.SuperZzt => ElementList.UnmapSuperZztElement(ElementType.Passage),
+            _ => -1
+        };
+
+        if (passageId < 0)
+            return;
+
+        for (var i = 0; i < Tiles.Length; i++)
+        {
+            if (Tiles[i].Element != passageId)
+                continue;
+
+            var x = i % Width + 1;
+            var y = i / Width + 1;
+
+            foreach (var actor in Actors)
+            {
+                if (actor.Position.X != x || actor.Position.Y != y)
+                    continue;
+
+                var p2 = actor.Parameters[2];
+                if (p2 > removedIndex)
+                    actor.Parameters[2] = p2 - 1;
+                else if (p2 == removedIndex)
+                    actor.Parameters[2] = 0;
+            }
+        }
     }
 }

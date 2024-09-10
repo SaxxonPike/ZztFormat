@@ -59,10 +59,8 @@ firstNonPlayerActor.Script = "@guy\r#end\r:touch\rHello!".ToCharArray();
 T4 templates are used to automatically generate static data and data models.
 
 - `Resources.tt`
-  - This template takes binary blobs for static data (such as font and palette)
-    and builds them into the assembly as lazy-initialized byte arrays.
-    - Font: 8x14 as used by ZZT 3.2
-    - Palette: standard IBM VGA palette
+  - This template takes binary blobs for static data and builds them into the
+    assembly as lazy-initialized byte arrays.
 - `Structures.tt`
   - This template builds data model classes and structs for the raw binary
     content. The data model is populated using the definitions in

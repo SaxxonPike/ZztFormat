@@ -22,7 +22,16 @@ public enum ReadOptions
     /// If specified, encountering corrupt boards will instead result in an
     /// exception.
     /// </summary>
-    ThrowOnCorruptBoards = 1 << 1
+    ThrowOnCorruptBoards = 1 << 1,
+    
+    /// <inheritdoc cref="FlagOptions.CaseSensitive"/>
+    CaseSensitiveFlags = 1 << 2,
+    
+    /// <inheritdoc cref="FlagOptions.PreserveCase"/>
+    PreserveFlagCase = 1 << 3,
+    
+    /// <inheritdoc cref="FlagOptions.AllowDuplicates"/>
+    AllowDuplicateFlags = 1 << 4
 }
 
 /// <summary>

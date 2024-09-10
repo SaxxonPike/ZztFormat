@@ -1,6 +1,7 @@
 ﻿// Automatically generated from Structures.txt and Structures.tt
 
 using JetBrains.Annotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using static System.Buffers.Binary.BinaryPrimitives;
 
@@ -24,6 +25,7 @@ internal static class CodePage437
 
 #region Data Types
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class ZztActor
 {
@@ -88,6 +90,7 @@ internal partial class ZztActor
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class SuperZztActor
 {
@@ -149,6 +152,7 @@ internal partial class SuperZztActor
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class ZztBoardHeader
 {
@@ -192,6 +196,7 @@ internal partial class ZztBoardHeader
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class SuperZztBoardHeader
 {
@@ -235,6 +240,7 @@ internal partial class SuperZztBoardHeader
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class ZztBoardInfo
 {
@@ -302,6 +308,7 @@ internal partial class ZztBoardInfo
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class SuperZztBoardInfo
 {
@@ -357,6 +364,7 @@ internal partial class SuperZztBoardInfo
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class ZztElementProperties
 {
@@ -529,6 +537,7 @@ internal partial class ZztElementProperties
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class SuperZztElementProperties
 {
@@ -698,6 +707,7 @@ internal partial class SuperZztElementProperties
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class ZztHighScoreList
 {
@@ -734,6 +744,7 @@ internal partial class ZztHighScoreList
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct ZztHighScore
 {
@@ -750,7 +761,7 @@ internal partial struct ZztHighScore
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)50)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)50)), NameBytes);
     }
 
     public static ZztHighScore Read(Stream stream)
@@ -784,6 +795,7 @@ internal partial struct ZztHighScore
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class SuperZztHighScoreList
 {
@@ -820,6 +832,7 @@ internal partial class SuperZztHighScoreList
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct SuperZztHighScore
 {
@@ -836,7 +849,7 @@ internal partial struct SuperZztHighScore
     public string Name
     {
         get => CodePage437.Encoding.GetString(NameBytes[..Math.Min(NameLength, (byte)60)]);
-        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value, NameBytes);
+        set => NameLength = (byte)CodePage437.Encoding.GetBytes(value.AsSpan(0, Math.Min(value.Length, (byte)60)), NameBytes);
     }
 
     public static SuperZztHighScore Read(Stream stream)
@@ -870,6 +883,7 @@ internal partial struct SuperZztHighScore
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class ZztWorldHeader
 {
@@ -960,6 +974,7 @@ internal partial class ZztWorldHeader
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class SuperZztWorldHeader
 {
@@ -1050,6 +1065,7 @@ internal partial class SuperZztWorldHeader
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial class ZztDatHeader
 {
@@ -1094,6 +1110,7 @@ internal partial class ZztDatHeader
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct ZztDatEntry
 {
@@ -1141,6 +1158,7 @@ internal partial struct ZztDatEntry
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct RawPosition
 {
@@ -1182,6 +1200,7 @@ internal partial struct RawPosition
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct RawTile
 {
@@ -1223,6 +1242,7 @@ internal partial struct RawTile
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct TileRle
 {
@@ -1267,6 +1287,7 @@ internal partial struct TileRle
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct Time
 {
@@ -1308,6 +1329,7 @@ internal partial struct Time
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct RawVector
 {
@@ -1349,6 +1371,7 @@ internal partial struct RawVector
     }
 }
 
+[ExcludeFromCodeCoverage]
 [PublicAPI]
 internal partial struct Flag
 {

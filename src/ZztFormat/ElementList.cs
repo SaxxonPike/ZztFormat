@@ -1,8 +1,13 @@
+using System.Collections;
+
 namespace ZztFormat;
 
-public static class ElementList
+public class ElementList(IEnumerable<Element> elements)
+    : IReadOnlyList<Element?>
 {
-    public static List<Element> Load(WorldType worldType) =>
+    private readonly Element[] _list = elements.ToArray();
+
+    public static ElementList Load(WorldType worldType) =>
         worldType switch
         {
             WorldType.Zzt => LoadZztElements(),
@@ -11,7 +16,7 @@ public static class ElementList
                 $"Unknown world type {worldType}.")
         };
 
-    internal static List<Element> LoadZztElements()
+    internal static ElementList LoadZztElements()
     {
         var bytes = Resources.ZztElements;
         var count = bytes.Length / ZztElementProperties.Size;
@@ -20,17 +25,15 @@ public static class ElementList
 
         for (var i = 0; i < count; i++)
         {
-            var element = Element.ReadZztElement(bytes[offset..]);
+            var element = Element.ReadZztElement(bytes[offset..], i);
             offset += ZztElementProperties.Size;
-            element.Type = MapZztElement(i);
-            element.Id = i;
             result.Add(element);
         }
 
-        return result;
+        return new ElementList(result);
     }
 
-    internal static List<Element> LoadSuperZztElements()
+    internal static ElementList LoadSuperZztElements()
     {
         var bytes = Resources.SuperZztElements;
         var count = bytes.Length / SuperZztElementProperties.Size;
@@ -39,14 +42,12 @@ public static class ElementList
 
         for (var i = 0; i < count; i++)
         {
-            var element = Element.ReadSuperZztElement(bytes[offset..]);
+            var element = Element.ReadSuperZztElement(bytes[offset..], i);
             offset += SuperZztElementProperties.Size;
-            element.Type = MapSuperZztElement(i);
-            element.Id = i;
             result.Add(element);
         }
 
-        return result;
+        return new ElementList(result);
     }
 
     internal static ElementType MapZztElement(int i) =>
@@ -176,7 +177,7 @@ public static class ElementList
             79 => ElementType.BlackText,
             _ => ElementType.Unknown
         };
-    
+
     internal static int UnmapZztElement(ElementType i) =>
         i switch
         {
@@ -304,4 +305,20 @@ public static class ElementList
             ElementType.BlackText => 79,
             _ => -1
         };
+
+    public IEnumerator<Element> GetEnumerator() =>
+        _list.AsEnumerable().GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() =>
+        _list.GetEnumerator();
+
+    public int Count => _list.Length;
+
+    public Element? this[int index] =>
+        index < 0 || index >= _list.Length
+            ? null
+            : _list[index];
+
+    public Element? this[ElementType type] =>
+        _list.FirstOrDefault(x => x.Type == type);
 }

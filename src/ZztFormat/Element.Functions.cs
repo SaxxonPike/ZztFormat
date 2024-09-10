@@ -15,19 +15,19 @@ public partial class Element
             _ => Color,
         };
 
-    public static Element? Get(int worldType, int elementId) =>
+    public static Element? Get(WorldType worldType, int elementId) =>
         worldType switch
         {
-            -1 => GetZztElement(elementId),
-            -2 => GetSuperZztElement(elementId),
+            WorldType.Zzt => GetZztElement(elementId),
+            WorldType.SuperZzt => GetSuperZztElement(elementId),
             _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 
-    public static Element? Get(int worldType, ElementType element) =>
+    public static Element? Get(WorldType worldType, ElementType element) =>
         worldType switch
         {
-            -1 => Get(-1, ElementList.UnmapZztElement(element)),
-            -2 => Get(-2, ElementList.UnmapSuperZztElement(element)),
+            WorldType.Zzt => Get(WorldType.Zzt, ElementList.UnmapZztElement(element)),
+            WorldType.SuperZzt => Get(WorldType.SuperZzt, ElementList.UnmapSuperZztElement(element)),
             _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 
@@ -38,9 +38,11 @@ public partial class Element
         if (offset >= data.Length || offset < 0)
             return default;
         
-        var element = ConvertElement(ZztElementProperties.Read(data[offset..]));
-        element.Id = elementId;
-        element.Type = ElementList.MapZztElement(elementId);
+        var element = ConvertElement(
+            ZztElementProperties.Read(data[offset..]),
+            elementId,
+            ElementList.MapZztElement(elementId));
+
         return element;
     }
 
@@ -51,23 +53,30 @@ public partial class Element
         if (offset >= data.Length || offset < 0)
             return default;
 
-        var element = ConvertElement(SuperZztElementProperties.Read(data[offset..]));
-        element.Id = elementId;
-        element.Type = ElementList.MapSuperZztElement(elementId);
+        var element = ConvertElement(
+            SuperZztElementProperties.Read(data[offset..]),
+            elementId,
+            ElementList.MapSuperZztElement(elementId));
+
         return element;
     }
 
-    public static Element Read(Stream stream, int worldType) =>
+    public static Element Read(Stream stream, WorldType worldType, int index) =>
         worldType switch
         {
-            -1 => ReadZztElement(stream),
-            -2 => ReadSuperZztElement(stream),
+            WorldType.Zzt => ReadZztElement(stream, index),
+            WorldType.SuperZzt => ReadSuperZztElement(stream, index),
             _ => throw new ZztFormatException($"Unknown world type {worldType}.")
         };
 
-    internal static Element ConvertElement(ZztElementProperties element) =>
+    internal static Element ConvertElement(
+        ZztElementProperties element,
+        int index,
+        ElementType elementType) =>
         new()
         {
+            Id = index,
+            Type = elementType,
             Character = element.Character,
             Color = element.Color,
             IsDestructible = element.DestructibleBit != 0,
@@ -89,9 +98,14 @@ public partial class Element
             Score = 0
         };
     
-    internal static Element ConvertElement(SuperZztElementProperties element) =>
+    internal static Element ConvertElement(
+        SuperZztElementProperties element,
+        int index,
+        ElementType elementType) =>
         new()
         {
+            Id = index,
+            Type = elementType,
             Character = element.Character,
             Color = element.Color,
             IsDestructible = element.DestructibleBit != 0,
@@ -112,15 +126,27 @@ public partial class Element
             Score = 0
         };
 
-    internal static Element ReadZztElement(Stream stream) => 
-        ConvertElement(ZztElementProperties.Read(stream));
+    internal static Element ReadZztElement(Stream stream, int index) => 
+        ConvertElement(
+            ZztElementProperties.Read(stream),
+            index,
+            ElementList.MapZztElement(index));
 
-    internal static Element ReadZztElement(ReadOnlySpan<byte> bytes) =>
-        ConvertElement(ZztElementProperties.Read(bytes));
+    internal static Element ReadZztElement(ReadOnlySpan<byte> bytes, int index) =>
+        ConvertElement(
+            ZztElementProperties.Read(bytes),
+            index,
+            ElementList.MapZztElement(index));
 
-    internal static Element ReadSuperZztElement(Stream stream) =>
-        ConvertElement(SuperZztElementProperties.Read(stream));
+    internal static Element ReadSuperZztElement(Stream stream, int index) =>
+        ConvertElement(
+            SuperZztElementProperties.Read(stream),
+            index,
+            ElementList.MapSuperZztElement(index));
 
-    internal static Element ReadSuperZztElement(ReadOnlySpan<byte> bytes) =>
-        ConvertElement(SuperZztElementProperties.Read(bytes));
+    internal static Element ReadSuperZztElement(ReadOnlySpan<byte> bytes, int index) =>
+        ConvertElement(
+            SuperZztElementProperties.Read(bytes),
+            index,
+            ElementList.MapSuperZztElement(index));
 }
