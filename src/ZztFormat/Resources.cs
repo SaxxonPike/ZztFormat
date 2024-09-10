@@ -9,16 +9,19 @@ namespace ZztFormat;
 [PublicAPI]
 internal static class Resources
 {
-    private static byte[] Decompress(byte[] compressed)
+    private static byte[] Decompress(byte[] compressed, int decompressedSize)
     {
+        Span<byte> decompressed = stackalloc byte[decompressedSize];
         using var mem = new MemoryStream(compressed);
         using var decomp = new GZipStream(mem, CompressionMode.Decompress);
         using var result = new MemoryStream();
-        decomp.CopyTo(result);
+        decomp.ReadExactly(decompressed);
+        result.Write(decompressed);
+        result.Flush();
         return result.ToArray();
     }
 
-    private static Lazy<byte[]> _rawZztElements = new(() => new byte[]
+    private static Lazy<byte[]> _rawZztElements = new(() => Decompress(new byte[]
     {
         0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,  // 0x0000
         0x00, 0x13, 0xED, 0x9A, 0x4F, 0x6C, 0xDB, 0x54,  // 0x0008
@@ -180,11 +183,11 @@ internal static class Resources
         0x13, 0x84, 0x30, 0xE8, 0x04, 0x21, 0x0C, 0xFA,  // 0x04E8
         0x1F, 0x20, 0xFC, 0x07, 0xA5, 0x26, 0x68, 0x24,  // 0x04F0
         0x22, 0x29, 0x00, 0x00, 
-    });
+    }, 0x2922));
 
     public static ReadOnlySpan<byte> ZztElements => _rawZztElements.Value;
 
-    private static Lazy<byte[]> _rawSuperZztElements = new(() => new byte[]
+    private static Lazy<byte[]> _rawSuperZztElements = new(() => Decompress(new byte[]
     {
         0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,  // 0x0000
         0x00, 0x13, 0xED, 0x9A, 0x4F, 0x6C, 0xDB, 0x54,  // 0x0008
@@ -372,7 +375,7 @@ internal static class Resources
         0x2E, 0x81, 0xFF, 0xEA, 0x12, 0xF8, 0xAF, 0x2E,  // 0x05B8
         0x81, 0xFF, 0xFA, 0x1F, 0x5A, 0x70, 0xD4, 0x89,  // 0x05C0
         0xA0, 0x3C, 0x00, 0x00, 
-    });
+    }, 0x3CA0));
 
     public static ReadOnlySpan<byte> SuperZztElements => _rawSuperZztElements.Value;
 
